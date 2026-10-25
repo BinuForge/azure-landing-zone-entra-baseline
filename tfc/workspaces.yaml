@@ -1,0 +1,116 @@
+# HCP Terraform projects, workspaces and variable sets.
+# Workspace name = <prefix>-<area>-<level>-<component>-<env> (docs/naming.md).
+# "reads" lists the workspaces whose outputs this one reads with tfe_outputs.
+# The tfc root's own workspace (lab-tfc-l0-core-prd) is created by bootstrap/, not here.
+
+projects:
+  azure-platform:
+    description: Azure platform levels 0-3. Local execution, run by GitHub Actions with OIDC.
+  entra-platform:
+    description: Entra ID baseline. Local execution, run by GitHub Actions with OIDC.
+  azure-workloads:
+    description: Level-4 workloads. Remote execution with HCP Terraform dynamic credentials.
+
+workspaces:
+  - area: azure
+    level: l0
+    component: org
+    env: prd
+    project: azure-platform
+    execution_mode: local
+    description: Management groups, custom roles, level identities.
+    reads: []
+
+  - area: azure
+    level: l1
+    component: governance
+    env: prd
+    project: azure-platform
+    execution_mode: local
+    description: Subscriptions and the policy baseline.
+    reads: [azure-l0-org-prd]
+
+  - area: azure
+    level: l2
+    component: management
+    env: prd
+    project: azure-platform
+    execution_mode: local
+    description: Log Analytics and budgets.
+    reads: [azure-l1-governance-prd]
+
+  - area: azure
+    level: l2
+    component: connectivity
+    env: prd
+    project: azure-platform
+    execution_mode: local
+    description: Hub network and cost-flagged network services.
+    reads: [azure-l1-governance-prd, azure-l2-management-prd]
+
+  - area: azure
+    level: l2
+    component: dns
+    env: prd
+    project: azure-platform
+    execution_mode: local
+    description: Central private DNS zones.
+    reads: [azure-l1-governance-prd, azure-l2-connectivity-prd]
+
+  - area: azure
+    level: l3
+    component: landingzones
+    env: prd
+    project: azure-platform
+    execution_mode: local
+    description: Landing zone vending (corp-nonprod, corp-prod, sandbox).
+    reads: [azure-l1-governance-prd, azure-l2-management-prd, azure-l2-connectivity-prd, azure-l2-dns-prd]
+
+  - area: azure
+    level: l4
+    component: websample
+    env: np
+    project: azure-workloads
+    execution_mode: remote
+    description: Sample web workload (App Service, Key Vault, private endpoints).
+    reads: [azure-l3-landingzones-prd]
+
+  - area: entra
+    level: l0
+    component: org
+    env: prd
+    project: entra-platform
+    execution_mode: local
+    description: Administrative units, persona groups, exclusion groups.
+    reads: []
+
+  - area: entra
+    level: l0
+    component: privileged
+    env: prd
+    project: entra-platform
+    execution_mode: local
+    description: Custom roles, role-assignable groups, PIM.
+    reads: [entra-l0-org-prd]
+
+  - area: entra
+    level: l1
+    component: governance
+    env: prd
+    project: entra-platform
+    execution_mode: local
+    description: Authorisation, consent, authentication methods and cross-tenant policies; Entra diagnostics.
+    reads: [entra-l0-org-prd, azure-l2-management-prd]
+
+  - area: entra
+    level: l1
+    component: ca
+    env: prd
+    project: entra-platform
+    execution_mode: local
+    description: Named locations, authentication strengths, Conditional Access baseline.
+    reads: [entra-l0-org-prd, entra-l0-privileged-prd]
+
+# Variable sets only reach remote-execution workspaces; local runs take variables from GitHub Actions.
+# The level-4 dynamic credentials set is added in the workload phase.
+variable_sets: {}

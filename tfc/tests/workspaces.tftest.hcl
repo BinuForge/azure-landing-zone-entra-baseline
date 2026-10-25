@@ -1,0 +1,94 @@
+# Runs with a mock provider: no HCP token, no network calls, nothing created.
+mock_provider "tfe" {
+  # tfe_variable validates the "varset-" ID format, so the mock must return one.
+  mock_resource "tfe_variable_set" {
+    defaults = {
+      id = "varset-mock000000000000"
+    }
+  }
+}
+
+variables {
+  organization = "example-org"
+}
+
+run "workspace_names_follow_convention" {
+  assert {
+    condition     = alltrue([for ws in tfe_workspace.this : can(regex("^lab-(azure|entra|tfc)-l[0-4]-[a-z]+-(prd|np)$", ws.name))])
+    error_message = "A workspace name does not follow docs/naming.md."
+  }
+}
+
+run "platform_levels_run_locally_and_workloads_remotely" {
+  assert {
+    condition = alltrue([
+      for key, s in tfe_workspace_settings.this :
+      s.execution_mode == (local.workspaces[key].level == "l4" ? "remote" : "local")
+    ])
+    error_message = "Levels 0-3 must use local execution and level 4 must use remote execution."
+  }
+}
+
+run "state_is_shared_only_with_declared_readers" {
+  assert {
+    condition     = alltrue([for s in tfe_workspace_settings.this : s.global_remote_state == false])
+    error_message = "No workspace may share state with the whole organisation."
+  }
+
+  assert {
+    condition = contains(
+      tfe_workspace_settings.this["azure-l0-org-prd"].remote_state_consumer_ids,
+      tfe_workspace.this["azure-l1-governance-prd"].id
+    )
+    error_message = "azure-l1-governance-prd reads azure-l0-org-prd, so it must be a state consumer."
+  }
+
+  assert {
+    condition     = length(tfe_workspace_settings.this["azure-l4-websample-np"].remote_state_consumer_ids) == 0
+    error_message = "Nothing reads the workload workspace, so it must have no state consumers."
+  }
+}
+
+run "remote_workspaces_pin_terraform_version" {
+  assert {
+    condition     = tfe_workspace.this["azure-l4-websample-np"].terraform_version == "1.17.0"
+    error_message = "Remote workspaces must pin the same Terraform version as CI."
+  }
+}
+
+run "reading_a_higher_level_is_rejected" {
+  command = plan
+
+  variables {
+    config_file = "tests/fixtures/upward-read.yaml"
+  }
+
+  expect_failures = [tfe_workspace.this]
+}
+
+run "bad_workspace_name_is_rejected" {
+  command = plan
+
+  variables {
+    config_file = "tests/fixtures/bad-name.yaml"
+  }
+
+  expect_failures = [tfe_workspace.this]
+}
+
+run "variable_sets_attach_and_resolve_inputs" {
+  variables {
+    config_file         = "tests/fixtures/variable-set.yaml"
+    variable_set_inputs = { tenant_id = "00000000-0000-0000-0000-000000000000" }
+  }
+
+  assert {
+    condition     = tfe_variable.this["workload-credentials/ARM_TENANT_ID"].value == "00000000-0000-0000-0000-000000000000"
+    error_message = "Variable values named by input must come from variable_set_inputs."
+  }
+
+  assert {
+    condition     = length(tfe_workspace_variable_set.this) == 1
+    error_message = "The variable set must attach to exactly the workspaces listed."
+  }
+}

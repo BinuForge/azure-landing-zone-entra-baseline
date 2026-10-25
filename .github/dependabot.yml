@@ -1,0 +1,16 @@
+# Proposes updates to SHA-pinned actions and provider constraints. Every update goes through the PR gates.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: terraform
+    directories:
+      - /tfc
+    schedule:
+      interval: weekly

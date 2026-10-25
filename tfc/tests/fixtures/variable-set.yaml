@@ -1,0 +1,25 @@
+projects:
+  azure-workloads:
+    description: Test project.
+
+workspaces:
+  - area: azure
+    level: l4
+    component: websample
+    env: np
+    project: azure-workloads
+    execution_mode: remote
+    description: Test workload.
+    reads: []
+
+variable_sets:
+  workload-credentials:
+    description: Test variable set.
+    workspaces: [azure-l4-websample-np]
+    variables:
+      TFC_AZURE_PROVIDER_AUTH:
+        category: env
+        value: "true"
+      ARM_TENANT_ID:
+        category: env
+        input: tenant_id

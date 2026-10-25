@@ -1,0 +1,138 @@
+name: _plan
+
+# Plans one level with its read-only identity and saves an encrypted plan for _apply.yml.
+# Callers arrive with the first deployable level.
+on:
+  workflow_call:
+    inputs:
+      working_directory:
+        type: string
+        required: true
+      environment:
+        description: GitHub environment that unlocks the level's plan identity, for example lab-azure-l0-plan.
+        type: string
+        required: true
+      comment:
+        description: Post the plan summary on the pull request.
+        type: boolean
+        default: false
+    outputs:
+      has_changes:
+        value: ${{ jobs.plan.outputs.has_changes }}
+      artifact:
+        value: ${{ jobs.plan.outputs.artifact }}
+    secrets:
+      TF_TOKEN_APP_TERRAFORM_IO:
+        required: true
+      PLAN_ENCRYPTION_KEY:
+        required: true
+
+# Deny everything by default; the job below grants only what it needs.
+permissions: {}
+
+env:
+  TERRAFORM_VERSION: 1.17.0
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write # OIDC token for Azure and Entra; no client secret exists
+      pull-requests: write
+    concurrency:
+      group: tf-${{ inputs.working_directory }}
+      cancel-in-progress: false
+    outputs:
+      has_changes: ${{ steps.plan.outputs.has_changes }}
+      artifact: ${{ steps.plan.outputs.artifact }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_CLOUD_ORGANIZATION: ${{ vars.TF_CLOUD_ORGANIZATION }}
+      TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+      TF_IN_AUTOMATION: "true"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Init
+        run: terraform init -input=false
+
+      # Exit code 0 = no changes, 1 = error, 2 = changes.
+      - name: Plan
+        id: plan
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          set +e
+          terraform plan -input=false -lock-timeout=5m -detailed-exitcode -out=tfplan
+          code=$?
+          set -e
+          if [ "$code" -eq 1 ]; then exit 1; fi
+          echo "has_changes=$([ "$code" -eq 2 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "artifact=tfplan-${ENVIRONMENT}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+
+      # Only actions and addresses leave the runner. The JSON plan holds values in clear text.
+      - name: Summarise
+        env:
+          DIR: ${{ inputs.working_directory }}
+        run: |
+          terraform show -json tfplan | jq -r --arg dir "$DIR" '
+            [.resource_changes[]? | select(.change.actions != ["no-op"])
+              | "| \(.change.actions | join(", ")) | `\(.address)` |"] as $rows
+            | "<!-- plan:\($dir) -->\n### Plan: `\($dir)`\n\n"
+              + (if ($rows | length) == 0 then "No changes."
+                 else "| Action | Resource |\n|---|---|\n" + ($rows | join("\n")) end)
+          ' > "$RUNNER_TEMP/summary.md"
+          cat "$RUNNER_TEMP/summary.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment on pull request
+        if: inputs.comment && github.event_name == 'pull_request'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          DIR: ${{ inputs.working_directory }}
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync(`${process.env.RUNNER_TEMP}/summary.md`, 'utf8');
+            const marker = `<!-- plan:${process.env.DIR} -->`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const existing = comments.find(c => c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      # Plan files can hold sensitive values, and artifacts on a public repo are downloadable.
+      - name: Encrypt plan
+        if: steps.plan.outputs.has_changes == 'true'
+        env:
+          PLAN_ENCRYPTION_KEY: ${{ secrets.PLAN_ENCRYPTION_KEY }}
+        run: |
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in tfplan -out tfplan.enc -pass env:PLAN_ENCRYPTION_KEY
+          rm tfplan
+
+      - name: Upload encrypted plan
+        if: steps.plan.outputs.has_changes == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ steps.plan.outputs.artifact }}
+          path: ${{ inputs.working_directory }}/tfplan.enc
+          retention-days: 1
+          if-no-files-found: error

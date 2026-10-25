@@ -1,0 +1,15 @@
+projects:
+  azure-platform:
+    description: Test project.
+
+workspaces:
+  - area: azure
+    level: l0
+    component: Org-Core
+    env: production
+    project: azure-platform
+    execution_mode: local
+    description: Uppercase, a hyphenated component and a long env name all break the convention.
+    reads: []
+
+variable_sets: {}

@@ -1,0 +1,24 @@
+projects:
+  azure-platform:
+    description: Test project.
+
+workspaces:
+  - area: azure
+    level: l0
+    component: org
+    env: prd
+    project: azure-platform
+    execution_mode: local
+    description: Level 0 must not read level 1.
+    reads: [azure-l1-governance-prd]
+
+  - area: azure
+    level: l1
+    component: governance
+    env: prd
+    project: azure-platform
+    execution_mode: local
+    description: Level 1.
+    reads: []
+
+variable_sets: {}

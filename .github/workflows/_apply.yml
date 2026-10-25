@@ -1,0 +1,78 @@
+name: _apply
+
+# Applies the saved plan from _plan.yml with the level's write identity.
+# The apply environment requires a reviewer and only accepts main.
+on:
+  workflow_call:
+    inputs:
+      working_directory:
+        type: string
+        required: true
+      environment:
+        description: GitHub environment that unlocks the level's apply identity, for example lab-azure-l0-apply.
+        type: string
+        required: true
+      artifact:
+        description: Name of the encrypted plan artifact from _plan.yml.
+        type: string
+        required: true
+    secrets:
+      TF_TOKEN_APP_TERRAFORM_IO:
+        required: true
+      PLAN_ENCRYPTION_KEY:
+        required: true
+
+# Deny everything by default; the job below grants only what it needs.
+permissions: {}
+
+env:
+  TERRAFORM_VERSION: 1.17.0
+
+jobs:
+  apply:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: tf-${{ inputs.working_directory }}
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_CLOUD_ORGANIZATION: ${{ vars.TF_CLOUD_ORGANIZATION }}
+      TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+      TF_IN_AUTOMATION: "true"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ inputs.artifact }}
+          path: ${{ inputs.working_directory }}
+
+      - name: Decrypt plan
+        env:
+          PLAN_ENCRYPTION_KEY: ${{ secrets.PLAN_ENCRYPTION_KEY }}
+        run: openssl enc -d -aes-256-cbc -pbkdf2 -in tfplan.enc -out tfplan -pass env:PLAN_ENCRYPTION_KEY
+
+      - name: Init
+        run: terraform init -input=false
+
+      # Terraform refuses a saved plan if state changed after it was made.
+      - name: Apply saved plan
+        run: terraform apply -input=false -lock-timeout=5m tfplan
