@@ -1,0 +1,33 @@
+# Terraform working files
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+tfplan.enc
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Tenant-specific values stay on your machine (docs/naming.md)
+**/env/*.auto.tfvars
+!**/env/example.auto.tfvars
+*.tfvars.json
+
+# Never commit assistant instructions or personal notes
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+notes/
+*.notes.md
+
+# Editors and OS
+.DS_Store
+.vscode/
+.idea/
+
+# Docs build output
+site/
