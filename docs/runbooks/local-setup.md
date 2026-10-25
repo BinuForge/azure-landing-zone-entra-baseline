@@ -4,7 +4,18 @@
 
 ```sh
 brew tap hashicorp/tap
-brew install hashicorp/tap/terraform tflint pre-commit gitleaks checkov azure-cli gh powershell
+brew install hashicorp/tap/terraform pre-commit gitleaks checkov azure-cli gh powershell
+```
+
+tflint has no Homebrew formula. Install the release binary and verify its checksum:
+
+```sh
+mkdir -p ~/.local/bin && cd "$(mktemp -d)"
+V=0.65.0
+curl -sSLO "https://github.com/terraform-linters/tflint/releases/download/v${V}/tflint_darwin_arm64.zip"
+curl -sSLO "https://github.com/terraform-linters/tflint/releases/download/v${V}/checksums.txt"
+shasum -a 256 -c --ignore-missing checksums.txt   # expect: tflint_darwin_arm64.zip: OK
+unzip -o tflint_darwin_arm64.zip -d ~/.local/bin   # ~/.local/bin must be on PATH
 ```
 
 Check versions against CI (`.github/workflows/_pr.yml`):
