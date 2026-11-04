@@ -1,0 +1,13 @@
+# Owners are requested as reviewers on every pull request that touches their paths.
+# With one maintainer every path has the same owner. The paths are listed so a second owner can be
+# added to the sensitive ones without restructuring (ADR-0006).
+
+*               @BinuForge
+
+# Pipelines, pipeline identities and HCP configuration: a change here changes who can deploy.
+/.github/       @BinuForge
+/bootstrap/     @BinuForge
+/tfc/           @BinuForge
+
+# Identity baseline
+/entra/         @BinuForge

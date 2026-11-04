@@ -17,7 +17,8 @@ override.tf.json
 !**/env/example.auto.tfvars
 *.tfvars.json
 
-# Never commit assistant instructions or personal notes
+# Personal assistant files and notes stay local.
+# Shared rules for assistants are committed in .github/copilot-instructions.md.
 CLAUDE.md
 CLAUDE.local.md
 .claude/

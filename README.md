@@ -2,9 +2,21 @@
 
 A right-sized Azure landing zone and Entra ID security baseline for a regulated organisation of
 300 to 1,000 staff: one tenant, one primary region and one DR region. Everything is Terraform, delivered
-through gated pipelines, and deployed for real in a dedicated lab tenant.
+through gated pipelines, and built to be deployed in a dedicated lab tenant.
 
-> **Status:** work in progress. Phase 1 (repository skeleton and PR gates) is under way.
+> Status: work in progress. Nothing has been deployed from this repository yet. Each area below says
+> "written, not yet deployed" until there is dated evidence of a real deployment.
+
+## Progress
+
+| Phase | Content | State |
+|---|---|---|
+| 1 | Repository skeleton, naming, HCP Terraform root, PR gates | Done |
+| 2 | Decisions and governance: ADRs, CODEOWNERS, PR template, governance runbook, licence | Done |
+| 3 | Bootstrap, destroy and drift workflows, verified costs | Next |
+| 4 | Thin platform: management, connectivity, DNS, Entra baseline, break-glass | Planned |
+| 5 | AI workload: threat model, Foundry, AI gateway, guardrails | Planned |
+| 6 | Architecture and control mapping | Planned |
 
 ## What it shows
 
@@ -17,7 +29,7 @@ through gated pipelines, and deployed for real in a dedicated lab tenant.
   approves.
 - **Identity baseline.** Conditional Access from Microsoft's templates (report-only first), PIM as
   code, break-glass accounts that Terraform reads but never creates, and tests that prove them.
-- **Cost discipline.** The default deployment costs under USD 5 a day; anything costly is behind a
+- **Cost discipline.** The default deployment targets under USD 5 a day; anything costly is behind a
   flag that defaults to off and is reset nightly.
 
 ## Repository layout
@@ -39,8 +51,13 @@ through gated pipelines, and deployed for real in a dedicated lab tenant.
 - [Cost and HCP resource count](docs/cost.md)
 - [Architecture decision records](docs/adr/)
 - [Local setup](docs/runbooks/local-setup.md)
+- [Repository governance](docs/runbooks/repo-governance.md)
 
-## Licensing notes
+## Licence
+
+Code and documentation are under the [MIT licence](LICENSE).
+
+## Licensing notes for Microsoft features
 
 Features that need Entra ID P2 or Workload Identities Premium are marked where they are used, and
 are behind flags so the code still deploys without them.
