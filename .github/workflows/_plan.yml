@@ -16,6 +16,10 @@ on:
         description: Post the plan summary on the pull request.
         type: boolean
         default: false
+      destroy:
+        description: Plan a destroy instead of a change. Used by destroy.yml; applied by _apply.yml like any plan.
+        type: boolean
+        default: false
     outputs:
       has_changes:
         value: ${{ jobs.plan.outputs.has_changes }}
@@ -74,9 +78,10 @@ jobs:
         id: plan
         env:
           ENVIRONMENT: ${{ inputs.environment }}
+          DESTROY_FLAG: ${{ inputs.destroy && '-destroy' || '' }}
         run: |
           set +e
-          terraform plan -input=false -lock-timeout=5m -detailed-exitcode -out=tfplan
+          terraform plan -input=false -lock-timeout=5m -detailed-exitcode $DESTROY_FLAG -out=tfplan
           code=$?
           set -e
           if [ "$code" -eq 1 ]; then exit 1; fi

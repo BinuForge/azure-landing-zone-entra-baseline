@@ -1,0 +1,78 @@
+name: destroy
+
+# Tears down cost-bearing levels in reverse dependency order, then checks nothing billable is left.
+# Each saved destroy plan is applied only after approval in that level's apply environment, like any
+# other change. Bootstrap, level 0 and level 1 are free and never torn down here.
+#
+# Each level adds its own destroy job here in the same pull request that adds the level
+# (docs/runbooks/destroy.md). Until then, `check` runs the leftovers check on its own.
+# checkov:skip=CKV_GHA_7:Not a build. The input is a fixed choice list, typed twice, and every destroy still needs approval in the level's apply environment.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: What to destroy. `check` only runs the leftovers check.
+        type: choice
+        options:
+          - check
+      confirm:
+        description: Type the target again to confirm.
+        type: string
+        required: true
+
+permissions: {}
+
+# Never overlaps a deploy of any level, and is never cancelled part way through.
+concurrency:
+  group: destroy
+  cancel-in-progress: false
+
+jobs:
+  confirm:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check the confirmation matches
+        env:
+          TARGET: ${{ inputs.target }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          if [ "$TARGET" != "$CONFIRM" ]; then
+            echo "Confirmation '$CONFIRM' does not match target '$TARGET'. Nothing was destroyed." >&2
+            exit 1
+          fi
+
+  # Level destroy jobs go here, highest level first. Each one needs the job before it and runs when
+  # `!failure() && !cancelled()`, so a skipped level does not stop the chain.
+
+  leftovers:
+    needs: confirm
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ubuntu-24.04
+    # Reader at the root management group, so it sees the whole subscription and changes nothing.
+    environment: lab-azure-l0-plan
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Plain OIDC exchange with the az CLI, so no third-party login action runs with this identity.
+      - name: Sign in with OIDC
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          token="$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r .value)"
+          echo "::add-mask::$token"
+          az login --service-principal -u "$AZURE_CLIENT_ID" -t "$AZURE_TENANT_ID" \
+            --federated-token "$token" --allow-no-subscriptions -o none
+          az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+
+      - name: Leftovers check
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: bash .github/scripts/leftovers.sh "$RUNNER_TEMP/leftovers.json"
