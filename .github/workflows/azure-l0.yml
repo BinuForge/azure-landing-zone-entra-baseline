@@ -38,6 +38,9 @@ jobs:
       working_directory: azure/level-0-org
       environment: lab-azure-l0-plan
       comment: ${{ github.event_name == 'pull_request' }}
+    # Brings secrets into scope so the called job's environment secrets resolve. The repository holds no
+    # repository-level secrets by design, so nothing else is passed.
+    secrets: inherit
 
   apply:
     needs: plan
@@ -50,3 +53,4 @@ jobs:
       working_directory: azure/level-0-org
       environment: lab-azure-l0-apply
       artifact: ${{ needs.plan.outputs.artifact }}
+    secrets: inherit
