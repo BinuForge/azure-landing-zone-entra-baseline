@@ -21,7 +21,7 @@ Every name in this repository follows this page. Code enforces the patterns wher
 | `<level>` | `l0` to `l4` | Lower levels never read higher levels. |
 | `<component>` | `org`, `governance`, `management`, `connectivity`, `dns`, `landingzones`, `privileged`, `ca`, `core`, or a workload name | Lowercase letters only, no hyphens. |
 | `<env>` | `prd`, `np` | Platform levels are a single shared instance and use `prd`. Workloads use `np` (non-production) or `prd`. |
-| `<region>` | `sea` (southeastasia, primary), `ea` (eastasia, DR) | Others if needed: `aue` (australiaeast), `ause` (australiasoutheast), `myw` (malaysiawest). |
+| `<region>` | `ae` (australiaeast, primary), `ase` (australiasoutheast, DR) | DR is the paired region in the same country, for data residency. Others if needed: `se` (southeastasia), `ea` (eastasia), `myw` (malaysiawest). |
 | `<nn>` | `01`, `02` | Instance number, only where more than one can exist. |
 
 ## HCP Terraform
@@ -56,12 +56,12 @@ Pattern: `<prefix>-<type>-<component>-<env>-<region>[-<nn>]`, where `<type>` is 
 | Resource | Type | Example | Constraint |
 |---|---|---|---|
 | Management group | `mg` | `lab-mg-platform` | ID is fixed at creation; display name may change. |
-| Resource group | `rg` | `lab-rg-connectivity-prd-sea` | |
-| Virtual network | `vnet` | `lab-vnet-hub-prd-sea` | |
-| Subnet | `snet` | `lab-snet-privateendpoints-prd-sea` | Azure-reserved names (`AzureFirewallSubnet`, `GatewaySubnet`, `AzureBastionSubnet`, `RouteServerSubnet`) are used as-is. |
-| Log Analytics workspace | `log` | `lab-log-management-prd-sea` | |
-| Key Vault | `kv` | `lab-kv-websample-np-sea` | 3-24 characters, globally unique. |
-| Storage account | `st` | `labstwebsamplenpsea01` | 3-24 lowercase letters and digits, no hyphens, globally unique. |
+| Resource group | `rg` | `lab-rg-connectivity-prd-ae` | |
+| Virtual network | `vnet` | `lab-vnet-hub-prd-ae` | |
+| Subnet | `snet` | `lab-snet-privateendpoints-prd-ae` | Azure-reserved names (`AzureFirewallSubnet`, `GatewaySubnet`, `AzureBastionSubnet`, `RouteServerSubnet`) are used as-is. |
+| Log Analytics workspace | `log` | `lab-log-management-prd-ae` | |
+| Key Vault | `kv` | `lab-kv-websample-np-ae` | 3-24 characters, globally unique. |
+| Storage account | `st` | `labstwebsamplenpae01` | 3-24 lowercase letters and digits, no hyphens, globally unique. |
 | Policy definition / initiative | `pol` / `ini` | `lab-ini-baseline-v1` | Version suffix is part of the name (see the policy baseline). |
 | Custom role | n/a | `lab-role-landingzone-owner` | |
 

@@ -14,7 +14,7 @@ flag that defaults to `false`.
 
 ## Cost per flag
 
-Approximate list prices for southeastasia, **not yet verified**. Each figure is checked against the
+Approximate list prices, **not yet verified** for australiaeast. Each figure is checked against the
 Azure pricing calculator in the phase that adds the flag, and this table is updated then.
 
 | Flag | Resource | Approx. USD / day | Verified |
