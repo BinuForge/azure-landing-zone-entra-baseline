@@ -18,6 +18,8 @@ mock_provider "github" {
   }
 }
 
+mock_provider "azapi" {}
+
 variables {
   subscription_id            = "00000000-0000-0000-0000-000000000000"
   budget_contact_emails      = ["alerts@example.com"]

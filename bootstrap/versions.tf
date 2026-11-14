@@ -14,6 +14,10 @@ terraform {
       source  = "integrations/github"
       version = "~> 6.13"
     }
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.13"
+    }
   }
 
   # State only. The workspace uses local execution, so plans run on the maintainer's machine with
