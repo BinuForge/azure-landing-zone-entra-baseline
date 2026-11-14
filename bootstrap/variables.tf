@@ -19,6 +19,17 @@ variable "prefix" {
   }
 }
 
+variable "location" {
+  description = "Azure region for the lab (docs/naming.md)."
+  type        = string
+  default     = "australiaeast"
+
+  validation {
+    condition     = contains(["australiaeast", "australiasoutheast", "southeastasia", "eastasia"], var.location)
+    error_message = "location must be a region with a code in docs/naming.md."
+  }
+}
+
 variable "budget_amount" {
   description = "Monthly budget in the billing currency. Alerts only: a budget never stops spend."
   type        = number
