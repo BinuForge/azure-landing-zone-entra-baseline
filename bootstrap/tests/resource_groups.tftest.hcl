@@ -8,9 +8,19 @@ mock_provider "azurerm" {
   }
 }
 
+mock_provider "azuread" {
+  mock_data "azuread_client_config" {
+    defaults = {
+      object_id = "00000000-0000-0000-0000-000000000001"
+    }
+  }
+}
+
 variables {
-  subscription_id       = "00000000-0000-0000-0000-000000000000"
-  budget_contact_emails = ["alerts@example.com"]
+  subscription_id            = "00000000-0000-0000-0000-000000000000"
+  budget_contact_emails      = ["alerts@example.com"]
+  github_oidc_subject_prefix = "repo:example@1/repo@2"
+  hcp_organization           = "example-org"
 }
 
 run "resource_group_names_follow_convention" {

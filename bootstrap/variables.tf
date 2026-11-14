@@ -30,6 +30,26 @@ variable "location" {
   }
 }
 
+variable "github_oidc_subject_prefix" {
+  description = "Start of the GitHub OIDC subject, using the repository's immutable IDs. Read it with: gh api repos/<owner>/<repo>/actions/oidc/customization/sub --jq .sub_claim_prefix"
+  type        = string
+
+  validation {
+    condition     = can(regex("^repo:[A-Za-z0-9-]+@[0-9]+/[A-Za-z0-9._-]+@[0-9]+$", var.github_oidc_subject_prefix))
+    error_message = "github_oidc_subject_prefix must use immutable IDs, for example repo:owner@123/repo@456."
+  }
+}
+
+variable "hcp_organization" {
+  description = "HCP Terraform organisation, used in the level 4 dynamic credential subjects."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9_-]+$", var.hcp_organization))
+    error_message = "hcp_organization must be an HCP Terraform organisation name."
+  }
+}
+
 variable "budget_amount" {
   description = "Monthly budget in the billing currency. Alerts only: a budget never stops spend."
   type        = number

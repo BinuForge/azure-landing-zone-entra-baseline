@@ -1,9 +1,19 @@
 # Runs with a mock provider: no Azure login, no network calls, nothing created.
 mock_provider "azurerm" {}
 
+mock_provider "azuread" {
+  mock_data "azuread_client_config" {
+    defaults = {
+      object_id = "00000000-0000-0000-0000-000000000001"
+    }
+  }
+}
+
 variables {
-  subscription_id       = "00000000-0000-0000-0000-000000000000"
-  budget_contact_emails = ["alerts@example.com"]
+  subscription_id            = "00000000-0000-0000-0000-000000000000"
+  budget_contact_emails      = ["alerts@example.com"]
+  github_oidc_subject_prefix = "repo:example@1/repo@2"
+  hcp_organization           = "example-org"
 }
 
 run "budget_alerts_on_actual_and_forecast" {
