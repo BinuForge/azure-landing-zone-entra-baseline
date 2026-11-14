@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/azuread"
       version = "~> 3.10"
     }
+    github = {
+      source  = "integrations/github"
+      version = "~> 6.13"
+    }
   }
 
   # State only. The workspace uses local execution, so plans run on the maintainer's machine with

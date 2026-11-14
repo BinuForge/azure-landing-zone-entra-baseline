@@ -45,8 +45,8 @@ jobs:
     env:
       ARM_USE_OIDC: "true"
       ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }} # a secret so it is masked in public logs
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       TF_CLOUD_ORGANIZATION: ${{ vars.TF_CLOUD_ORGANIZATION }}
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
       TF_IN_AUTOMATION: "true"

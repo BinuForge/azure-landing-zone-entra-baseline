@@ -53,8 +53,10 @@
    Control Administrator with a condition naming the only roles it may assign.
 4. Provider registration is done once by bootstrap. Level providers set
    `resource_provider_registrations = "none"`, so no level needs subscription-wide write rights.
-5. No secret enters Terraform state. Bootstrap creates environments and variables; a script sets the HCP
-   token and the plan encryption key with `gh secret set`.
+5. No credential enters Terraform state. Bootstrap creates environments and variables; a script sets the
+   HCP token and the plan encryption key with `gh secret set`. Tenant and subscription IDs are identifiers,
+   not credentials, so bootstrap stores them as environment secrets: Actions prints variable values in
+   logs, and logs are public on this repository.
 
 The person-run bootstrap was chosen because, with one maintainer, a separate identity pipeline adds no
 separation of duties. It would only add a second automated path to Tier 0.
@@ -75,13 +77,13 @@ Scope "root" is the tenant root management group. Resource group names follow `d
 | `lab-azure-l2-apply` | Contributor | management group (resource group) | Log Analytics |
 | `lab-azure-l2-apply` | Network Contributor | connectivity group | Hub network |
 | `lab-azure-l2-apply` | Private DNS Zone Contributor | DNS group | Zones, and links to the hub |
-| `lab-azure-l3-plan` | Reader | AI services group | |
+| `lab-azure-l3-plan` | Reader | AI services, connectivity and DNS groups | Plans read the peering and zone links that level 3 owns in the hub's groups |
 | `lab-azure-l3-apply` | Contributor | AI services group | Foundry, APIM, prompt workspace |
 | `lab-azure-l3-apply` | Custom `lab-role-spoke-network-join`: peer with the hub and register private endpoint records | connectivity and DNS groups | Spoke joins the hub without owning it |
-| `lab-azure-l3-apply` | Role Based Access Control Administrator, condition: may assign only the Foundry inference role and Log Analytics Reader | AI services group | Give APIM's identity the model role (ADR-0008) |
-| `lab-azure-l4-plan` | Reader | ops agent group | HCP dynamic credentials, `run_phase:plan` |
+| `lab-azure-l3-apply` | Role Based Access Control Administrator, condition: may assign only Cognitive Services OpenAI User and Log Analytics Reader, and only to service principals | AI services group | Give APIM's identity the model role (ADR-0008) |
+| `lab-azure-l4-plan` | Reader | subscription | HCP dynamic credentials, `run_phase:plan`. Plans read the runner's role assignments, which sit at several scopes |
 | `lab-azure-l4-apply` | Contributor | ops agent group | HCP dynamic credentials, `run_phase:apply` |
-| `lab-azure-l4-apply` | Role Based Access Control Administrator, condition: may assign only Reader, Cost Management Reader and Log Analytics Reader | subscription | Give the runner identity its read roles |
+| `lab-azure-l4-apply` | Role Based Access Control Administrator, condition: may assign only Reader, Cost Management Reader and Log Analytics Reader, and only to service principals | subscription | Give the runner identity its read roles |
 | `lab-azure-l4-opsagent-run` | None from bootstrap; read roles come from level 4 | | The ops agent's runner (threat model C-06) |
 
 Entra level identities need Microsoft Graph permissions and are added when the Entra baseline is built.

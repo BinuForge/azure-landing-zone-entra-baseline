@@ -13,3 +13,9 @@ provider "azurerm" {
 # Same `az login` session. Creating app registrations needs an Entra role such as Application
 # Administrator; the maintainer's Global Administrator role covers it.
 provider "azuread" {}
+
+# Token comes from GITHUB_TOKEN, set from `gh auth token` for the run only (ADR-0005). It needs admin
+# rights on the repository to manage environments, and never leaves the maintainer's machine.
+provider "github" {
+  owner = var.github_owner
+}

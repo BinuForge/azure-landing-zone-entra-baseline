@@ -40,6 +40,24 @@ variable "github_oidc_subject_prefix" {
   }
 }
 
+variable "github_owner" {
+  description = "GitHub account that owns the repository."
+  type        = string
+  default     = "BinuForge"
+}
+
+variable "github_repository" {
+  description = "Repository whose environments bootstrap manages."
+  type        = string
+  default     = "azure-landing-zone-entra-baseline"
+}
+
+variable "github_apply_reviewer" {
+  description = "GitHub user who must approve every apply (ADR-0006)."
+  type        = string
+  default     = "BinuForge"
+}
+
 variable "hcp_organization" {
   description = "HCP Terraform organisation, used in the level 4 dynamic credential subjects."
   type        = string
