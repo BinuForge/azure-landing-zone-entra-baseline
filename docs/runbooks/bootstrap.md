@@ -84,6 +84,23 @@ Run after the first apply that creates environments, and every 30 days to rotate
 Rotating issues a new HCP token and new plan keys. Old plans cannot be decrypted afterwards, which is
 fine: a saved plan is only valid for one day.
 
+## HCP projects and workspaces (`tfc/`)
+
+The `tfc/` root creates the projects, workspaces and variable sets in `tfc/workspaces.yaml`. Its own
+workspace, `lab-tfc-l0-core-prd`, is created by its first `terraform init`, like bootstrap's.
+
+1. Copy `tfc/env/example.auto.tfvars` to `tfc/env/lab.auto.tfvars` and fill in. The level 4 client IDs
+   come from `terraform output identity_client_ids` in `bootstrap/` (keys `azure-l4-plan` and
+   `azure-l4-apply`); tenant and subscription from `az account show --query "{tenant:tenantId, sub:id}"`.
+2. From `tfc/`: `terraform init`, then set `lab-tfc-l0-core-prd` to Local execution in HCP, as for
+   bootstrap.
+3. `terraform plan -var-file=env/lab.auto.tfvars -out=tfplan`, read it, then `terraform apply tfplan`.
+4. Check in HCP that level 0-3 workspaces show Local execution, `lab-azure-l4-opsagent-np` shows Remote,
+   and the `lab-azure-workload-credentials` variable set is attached to it only.
+
+Every resource in HCP state counts towards the Free tier's 500 managed resources. Check the count in
+`docs/cost.md` when adding a level.
+
 ## Checks after a run
 
 ```sh

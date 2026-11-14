@@ -121,5 +121,27 @@ workspaces:
     reads: [entra-l0-org-prd, entra-l0-privileged-prd]
 
 # Variable sets only reach remote-execution workspaces; local runs take variables from GitHub Actions.
-# The level-4 dynamic credentials set is added in the workload phase.
-variable_sets: {}
+# Values that identify the tenant are named by `input` and supplied from git-ignored env/*.auto.tfvars.
+variable_sets:
+  azure-workload-credentials:
+    description: HCP dynamic credentials for level 4. Plan and apply use separate identities (ADR-0012).
+    workspaces: [azure-l4-opsagent-np]
+    variables:
+      TFC_AZURE_PROVIDER_AUTH:
+        category: env
+        value: "true"
+        description: Use HCP dynamic credentials; no client secret exists.
+      TFC_AZURE_RUN_PLAN_CLIENT_ID:
+        category: env
+        input: l4_plan_client_id
+        description: lab-azure-l4-plan, trusted for run_phase plan only.
+      TFC_AZURE_RUN_APPLY_CLIENT_ID:
+        category: env
+        input: l4_apply_client_id
+        description: lab-azure-l4-apply, trusted for run_phase apply only.
+      ARM_TENANT_ID:
+        category: env
+        input: tenant_id
+      ARM_SUBSCRIPTION_ID:
+        category: env
+        input: subscription_id
