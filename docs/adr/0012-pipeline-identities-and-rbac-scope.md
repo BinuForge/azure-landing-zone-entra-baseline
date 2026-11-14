@@ -70,7 +70,6 @@ Scope "root" is the tenant root management group. Resource group names follow `d
 |---|---|---|---|
 | `lab-azure-l0-plan` | Reader | root | Read management groups and placement |
 | `lab-azure-l0-apply` | Management Group Contributor | root | Create the hierarchy |
-| `lab-azure-l0-apply` | TODO at build: the least role that can move a subscription between management groups (Microsoft documents Owner on the subscription) | subscription | Place the subscription |
 | `lab-azure-l1-plan` | Reader | root | Read policy state |
 | `lab-azure-l1-apply` | Resource Policy Contributor | root | Policy definitions and assignments. Deny and audit only, so no policy identity needs roles |
 | `lab-azure-l2-plan` | Reader | management, connectivity, DNS groups | |
@@ -86,6 +85,21 @@ Scope "root" is the tenant root management group. Resource group names follow `d
 | `lab-azure-l4-apply` | Role Based Access Control Administrator, condition: may assign only Reader, Cost Management Reader and Log Analytics Reader, and only to service principals | subscription | Give the runner identity its read roles |
 | `lab-azure-l4-opsagent-run` | None from bootstrap; read roles come from level 4 | | The ops agent's runner (threat model C-06) |
 
+Moving a subscription needs `roleAssignments/write` and `delete` on it, which in practice means Owner
+([move management groups and subscriptions](https://learn.microsoft.com/en-us/azure/governance/management-groups/manage)).
+So bootstrap, not level 0, places the subscription in `lab-mg-corp`, and also sets the hierarchy
+settings: new subscriptions land in `lab-mg-sandbox`, and creating a management group needs write rights
+at the root.
+
+The maintainer's own standing Azure access:
+
+| Principal | Role | Scope | Why |
+|---|---|---|---|
+| Maintainer | Owner (from the free account sign-up) | subscription | Runs bootstrap |
+| Maintainer | Management Group Reader | `lab-mg-root` | See the hierarchy; Global Administrator alone shows nothing |
+| Maintainer | Management Group Contributor | `lab-mg-corp` | Keep the subscription placed there |
+| Maintainer | Custom `lab-role-hierarchy-settings`: `managementgroups/settings/read` and `write` only | root | Hierarchy settings need these at the root, and no built-in role short of Owner grants them |
+
 Entra level identities need Microsoft Graph permissions and are added when the Entra baseline is built.
 
 ## Risks accepted
@@ -95,7 +109,7 @@ Entra level identities need Microsoft Graph permissions and are added when the E
 | The person running bootstrap holds User Access Administrator at root during the run | Someone has to create the first grants | Elevation switched on for the run only, then off; recorded in the runbook |
 | Bootstrap state holds identity and role details | It is in HCP with no secrets in it | Workspace access limited to the owners team |
 | A role assignment condition is written wrongly and allows more than intended | Conditions are new to most reviewers | A test tries to assign Owner with each constrained identity and expects 403 |
-| Moving a subscription may need Owner on it | Documented by Microsoft | Confirmed at build; if so, placement moves into bootstrap instead of level 0 |
+| The maintainer holds standing Azure grants as a user, not through PIM and a group | One maintainer, and a Global Administrator can elevate at any time anyway | Read by default, write on one management group, one two-action custom role; at a bank, PIM-eligible group assignments |
 
 ## Consequences
 
