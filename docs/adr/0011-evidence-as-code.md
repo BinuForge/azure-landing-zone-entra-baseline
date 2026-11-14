@@ -36,7 +36,9 @@ Each deploy, test and destroy cycle runs an evidence workflow that collects, fro
 - the ops agent's report on the estate.
 
 Identifiers are redacted and every file is scanned (T-08) before it is attested and committed to
-`evidence/<date>-<unit>/` through a pull request. Each entry in `controls.yaml` names its evidence
+`evidence/<date>-<unit>/` through a pull request. A person opens that pull request, because one opened
+by a workflow would not trigger the required PR gates; the attestation still proves each file came from
+the workflow unchanged (`docs/runbooks/evidence.md`). Each entry in `controls.yaml` names its evidence
 path, and CI fails if a named path does not exist.
 
 Attested evidence was chosen because it can be checked by anyone after the environment is gone, without

@@ -43,7 +43,7 @@ fails the plan if one does not.
 | Pipeline app registration (workload level) | `<prefix>-<area>-l4-plan` / `-apply` | `lab-azure-l4-apply` |
 | GitHub environment | same as the identity it unlocks | `lab-entra-l1-apply` |
 | Module release tag | `azure/<module>/<semver>` | `azure/private-endpoint/1.0.0` |
-| Branch | `phase-<n>-<slug>` or `fix/<slug>` | `phase-1-skeleton` |
+| Branch | `phase-<n>-<slug>`, `fix/<slug>`, or `evidence/<label>` | `phase-1-skeleton`, `evidence/2026-11-19-aiservices` |
 
 The GitHub environment and the identity share a name on purpose: the federated credential subject
 contains the environment name, so the mapping is visible at a glance.

@@ -58,19 +58,12 @@ jobs:
         with:
           persist-credentials: false
 
-      # Plain OIDC exchange with the az CLI, so no third-party login action runs with this identity.
       - name: Sign in with OIDC
         env:
           AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        run: |
-          token="$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r .value)"
-          echo "::add-mask::$token"
-          az login --service-principal -u "$AZURE_CLIENT_ID" -t "$AZURE_TENANT_ID" \
-            --federated-token "$token" --allow-no-subscriptions -o none
-          az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+        run: bash .github/scripts/az-login-oidc.sh
 
       - name: Leftovers check
         env:
