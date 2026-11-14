@@ -10,6 +10,12 @@ mock_provider "tfe" {
 
 variables {
   organization = "example-org"
+  variable_set_inputs = {
+    l4_plan_client_id  = "00000000-0000-0000-0000-00000000000a"
+    l4_apply_client_id = "00000000-0000-0000-0000-00000000000b"
+    tenant_id          = "00000000-0000-0000-0000-00000000000c"
+    subscription_id    = "00000000-0000-0000-0000-00000000000d"
+  }
 }
 
 run "workspace_names_follow_convention" {
@@ -90,5 +96,24 @@ run "variable_sets_attach_and_resolve_inputs" {
   assert {
     condition     = length(tfe_workspace_variable_set.this) == 1
     error_message = "The variable set must attach to exactly the workspaces listed."
+  }
+}
+
+run "level_4_gets_separate_plan_and_apply_identities" {
+  command = plan
+
+  assert {
+    condition     = tfe_variable.this["azure-workload-credentials/TFC_AZURE_RUN_PLAN_CLIENT_ID"].value != tfe_variable.this["azure-workload-credentials/TFC_AZURE_RUN_APPLY_CLIENT_ID"].value
+    error_message = "Level 4 plan and apply must use different identities."
+  }
+
+  assert {
+    condition     = tfe_variable.this["azure-workload-credentials/TFC_AZURE_PROVIDER_AUTH"].value == "true"
+    error_message = "Level 4 must use HCP dynamic credentials."
+  }
+
+  assert {
+    condition     = alltrue([for k, _ in tfe_workspace_variable_set.this : strcontains(k, "/azure-l4-")])
+    error_message = "Credential variable sets may attach only to level 4 workspaces."
   }
 }
