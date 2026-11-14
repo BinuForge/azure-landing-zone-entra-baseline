@@ -26,7 +26,9 @@ Disable local authentication and public network access on Foundry, and grant a F
 to the APIM managed identity only. Consumers authenticate to APIM with their own Entra identity and are
 authorised per APIM product. No consumer identity holds a role on Foundry.
 
-TODO at build: confirm the least-privilege built-in role for inference on a Foundry account.
+The role is Cognitive Services OpenAI User: it can call deployments and read models, but has no
+`listkeys` action. Foundry User was rejected because it includes `accounts/listkeys/action` and
+`projects/connections/listsecrets/action` (checked with `az role definition list` on 2026-11-14).
 
 Identity was chosen over network rules because it holds even when the network is wrong, and because the
 test for it is simple: call Foundry directly and expect 403 (T-04).

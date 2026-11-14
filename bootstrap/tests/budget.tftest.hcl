@@ -5,6 +5,15 @@ mock_provider "azuread" {
   mock_data "azuread_client_config" {
     defaults = {
       object_id = "00000000-0000-0000-0000-000000000001"
+      tenant_id = "00000000-0000-0000-0000-000000000002"
+    }
+  }
+}
+
+mock_provider "github" {
+  mock_data "github_user" {
+    defaults = {
+      id = "12345"
     }
   }
 }
