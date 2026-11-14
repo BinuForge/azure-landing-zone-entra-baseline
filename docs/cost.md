@@ -37,4 +37,4 @@ Warn before a phase would take the total past **400**.
 | Root | Phase | Resources | Running total |
 |---|---|---|---|
 | `bootstrap/` | 3 | 112 (budget, 6 resource groups, lock, 11 apps, 11 service principals, 11 federated credentials, custom role, 20 role assignments, 9 environments, 5 branch policies, 18 variables, 18 secrets) | 112 |
-| `tfc/` | 3 | 36 (3 projects, 13 workspaces, 13 workspace settings, 1 variable set, 1 attachment, 5 variables) | 148 |
+| `tfc/` | 3 | 34 (3 projects, 12 workspaces, 12 workspace settings, 1 variable set, 1 attachment, 5 variables) | 146 |
