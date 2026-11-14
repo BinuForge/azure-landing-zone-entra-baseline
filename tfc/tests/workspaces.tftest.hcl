@@ -44,14 +44,14 @@ run "state_is_shared_only_with_declared_readers" {
   }
 
   assert {
-    condition     = length(tfe_workspace_settings.this["azure-l4-websample-np"].remote_state_consumer_ids) == 0
+    condition     = length(tfe_workspace_settings.this["azure-l4-opsagent-np"].remote_state_consumer_ids) == 0
     error_message = "Nothing reads the workload workspace, so it must have no state consumers."
   }
 }
 
 run "remote_workspaces_pin_terraform_version" {
   assert {
-    condition     = tfe_workspace.this["azure-l4-websample-np"].terraform_version == "1.17.0"
+    condition     = tfe_workspace.this["azure-l4-opsagent-np"].terraform_version == "1.17.0"
     error_message = "Remote workspaces must pin the same Terraform version as CI."
   }
 }

@@ -19,7 +19,7 @@ Every name in this repository follows this page. Code enforces the patterns wher
 | `<prefix>` | `lab` | 2-5 lowercase letters. |
 | `<area>` | `azure`, `entra`, `tfc` | `tfc` is the HCP Terraform configuration itself. |
 | `<level>` | `l0` to `l4` | Lower levels never read higher levels. |
-| `<component>` | `org`, `governance`, `management`, `connectivity`, `dns`, `landingzones`, `privileged`, `ca`, `core`, or a workload name | Lowercase letters only, no hyphens. |
+| `<component>` | `org`, `governance`, `management`, `connectivity`, `dns`, `landingzones`, `aiservices`, `privileged`, `ca`, `core`, `bootstrap`, or a workload name such as `opsagent` | Lowercase letters only, no hyphens. |
 | `<env>` | `prd`, `np` | Platform levels are a single shared instance and use `prd`. Workloads use `np` (non-production) or `prd`. |
 | `<region>` | `ae` (australiaeast, primary), `ase` (australiasoutheast, DR) | DR is the paired region in the same country, for data residency. Others if needed: `se` (southeastasia), `ea` (eastasia), `myw` (malaysiawest). |
 | `<nn>` | `01`, `02` | Instance number, only where more than one can exist. |
@@ -29,7 +29,7 @@ Every name in this repository follows this page. Code enforces the patterns wher
 | Object | Pattern | Example |
 |---|---|---|
 | Project | `<prefix>-<area>-<purpose>` | `lab-azure-platform`, `lab-entra-platform`, `lab-azure-workloads` |
-| Workspace | `<prefix>-<area>-<level>-<component>-<env>` | `lab-azure-l0-org-prd`, `lab-entra-l1-ca-prd`, `lab-azure-l4-websample-np` |
+| Workspace | `<prefix>-<area>-<level>-<component>-<env>` | `lab-azure-l0-org-prd`, `lab-entra-l1-ca-prd`, `lab-azure-l4-opsagent-np` |
 | Variable set | `<prefix>-<area>-<purpose>` | `lab-azure-workload-credentials` |
 
 Workspace names must match `^[a-z]{2,5}-(azure|entra|tfc)-l[0-4]-[a-z]+-(prd|np)$`. The `tfc/` root
@@ -60,8 +60,8 @@ Pattern: `<prefix>-<type>-<component>-<env>-<region>[-<nn>]`, where `<type>` is 
 | Virtual network | `vnet` | `lab-vnet-hub-prd-ae` | |
 | Subnet | `snet` | `lab-snet-privateendpoints-prd-ae` | Azure-reserved names (`AzureFirewallSubnet`, `GatewaySubnet`, `AzureBastionSubnet`, `RouteServerSubnet`) are used as-is. |
 | Log Analytics workspace | `log` | `lab-log-management-prd-ae` | |
-| Key Vault | `kv` | `lab-kv-websample-np-ae` | 3-24 characters, globally unique. |
-| Storage account | `st` | `labstwebsamplenpae01` | 3-24 lowercase letters and digits, no hyphens, globally unique. |
+| Key Vault | `kv` | `lab-kv-aiservices-prd-ae` | 3-24 characters, globally unique. |
+| Storage account | `st` | `labstaiservicesprdae01` | 3-24 lowercase letters and digits, no hyphens, globally unique. |
 | Policy definition / initiative | `pol` / `ini` | `lab-ini-baseline-v1` | Version suffix is part of the name (see the policy baseline). |
 | Custom role | n/a | `lab-role-landingzone-owner` | |
 
