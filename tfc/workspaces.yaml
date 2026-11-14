@@ -18,7 +18,7 @@ workspaces:
     env: prd
     project: azure-platform
     execution_mode: local
-    description: Management groups, custom roles, level identities.
+    description: Management groups and subscription placement. Pipeline identities come from bootstrap (ADR-0012).
     reads: []
 
   - area: azure
@@ -63,17 +63,26 @@ workspaces:
     env: prd
     project: azure-platform
     execution_mode: local
-    description: Landing zone vending (corp-nonprod, corp-prod, sandbox).
+    description: Landing zone vending (corp-nonprod, corp-prod, sandbox). Designed, not deployed (ADR-0004).
+    reads: [azure-l1-governance-prd, azure-l2-management-prd, azure-l2-connectivity-prd, azure-l2-dns-prd]
+
+  - area: azure
+    level: l3
+    component: aiservices
+    env: prd
+    project: azure-platform
+    execution_mode: local
+    description: Shared AI services landing zone - Foundry, APIM gateway, prompt log workspace (ADR-0007).
     reads: [azure-l1-governance-prd, azure-l2-management-prd, azure-l2-connectivity-prd, azure-l2-dns-prd]
 
   - area: azure
     level: l4
-    component: websample
+    component: opsagent
     env: np
     project: azure-workloads
     execution_mode: remote
-    description: Sample web workload (App Service, Key Vault, private endpoints).
-    reads: [azure-l3-landingzones-prd]
+    description: Ops agent - runner identity roles, Foundry project consumer (threat-model-ai.md).
+    reads: [azure-l2-management-prd, azure-l3-aiservices-prd]
 
   - area: entra
     level: l0

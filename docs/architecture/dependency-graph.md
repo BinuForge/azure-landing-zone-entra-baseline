@@ -12,8 +12,9 @@ flowchart BT
     a2m["lab-azure-l2-management-prd"]
     a2c["lab-azure-l2-connectivity-prd"]
     a2d["lab-azure-l2-dns-prd"]
-    a3["lab-azure-l3-landingzones-prd"]
-    a4["lab-azure-l4-websample-np<br/>(remote execution)"]
+    a3["lab-azure-l3-landingzones-prd<br/>(designed, not deployed)"]
+    a3ai["lab-azure-l3-aiservices-prd"]
+    a4["lab-azure-l4-opsagent-np<br/>(remote execution)"]
   end
 
   subgraph entra["Entra ID"]
@@ -33,7 +34,12 @@ flowchart BT
   a3 --> a2m
   a3 --> a2c
   a3 --> a2d
-  a4 --> a3
+  a3ai --> a1
+  a3ai --> a2m
+  a3ai --> a2c
+  a3ai --> a2d
+  a4 --> a2m
+  a4 --> a3ai
 
   e0p --> e0o
   e1g --> e0o
