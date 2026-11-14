@@ -11,16 +11,12 @@ PR gate, and an apply would run without anyone confirming the plan.
 
 ## Current state
 
-The repository is private on GitHub Free, where rulesets, branch protection and environment reviewers
-are not available. Checking returns HTTP 403:
+The repository went public on 2026-11-14, after a full-history gitleaks scan with no findings. On GitHub
+Free, rulesets, environments with required reviewers, secret scanning and artifact attestations are only
+available to public repositories, which is why it is public.
 
-```sh
-gh api repos/BinuForge/azure-landing-zone-entra-baseline/rulesets
-```
-
-Everything below is the target, applied when the repository goes public, which happens before the
-first apply and after a clean gitleaks run in CI. Until then the gates run on every pull request but
-nothing forces their use.
+Applied on 2026-11-14: merging, both rulesets, Actions settings and security features. Environments
+are created by bootstrap, so their rows below are still the target until bootstrap runs.
 
 ## Target settings
 
@@ -37,7 +33,7 @@ nothing forces their use.
 | Rule | Value | Why |
 |---|---|---|
 | Require a pull request | On, 0 required approvals | Every change runs the gates; approvals cannot be required with one maintainer (ADR-0006) |
-| Required status checks | `discover`, `secrets-scan`, `iac-scan` and each `terraform` check | A failing gate blocks the merge |
+| Required status checks | `discover`, `secrets-scan`, `iac-scan` and each `terraform (<root>) / <root>` check | A failing gate blocks the merge. Each new Terraform root adds a check, and the ruleset is updated in the same PR |
 | Block force pushes | On | History on `main` cannot be rewritten by accident |
 | Restrict deletions | On | `main` cannot be deleted |
 | Bypass | Repository admin only | A solo maintainer needs a way to recover; bypasses are logged |
@@ -63,7 +59,7 @@ subject contains the environment name. Bootstrap creates them (ADR-0005).
 |---|---|---|
 | Default workflow permissions | Read repository contents | Each workflow asks for more per job |
 | Allow Actions to create and approve pull requests | Off | A workflow cannot approve its own change |
-| Require actions pinned to a full commit SHA | On | Matches ADR-0001; TODO: confirm the setting name in the current GitHub UI |
+| Require actions pinned to a full commit SHA | On (`sha_pinning_required` in the Actions permissions API) | Matches ADR-0001; a workflow using a tag instead of a SHA fails |
 | Fork pull request workflows | Require approval for all outside collaborators | Forks never get secrets, and do not run unreviewed |
 
 ### Security features
@@ -76,7 +72,7 @@ subject contains the environment name. Bootstrap creates them (ADR-0005).
 
 ## Checking the settings
 
-After the repository is public:
+To check the current settings:
 
 ```sh
 R=BinuForge/azure-landing-zone-entra-baseline
