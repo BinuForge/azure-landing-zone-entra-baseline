@@ -16,11 +16,9 @@ on:
         description: Name of the encrypted plan artifact from _plan.yml.
         type: string
         required: true
-    secrets:
-      TF_TOKEN_APP_TERRAFORM_IO:
-        required: true
-      PLAN_ENCRYPTION_KEY:
-        required: true
+    # TF_TOKEN_APP_TERRAFORM_IO, PLAN_ENCRYPTION_KEY, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID are
+    # environment secrets. Callers use `secrets: inherit` so they resolve in the job below, which names the
+    # environment; without it the secrets context is empty.
 
 # Deny everything by default; the job below grants only what it needs.
 permissions: {}
