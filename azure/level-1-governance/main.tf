@@ -16,7 +16,6 @@ locals {
   builtin = {
     ai_restrict_network     = "037eea7a-bd0a-46c5-9a66-03aea78705d3"
     ai_disable_local_auth   = "71ef260a-8f18-47b7-abcb-62d0673d94dc" # gitleaks:allow public built-in policy ID, same in every tenant
-    ai_allowed_kinds        = "24695608-3876-42e7-b7ec-17a85ebb9133"
     ai_approved_models      = "aafe3651-cb78-4f68-9f81-e7e41509110f"
     ai_model_eligibility    = "8791d062-ba96-4c34-b604-8538f7e30ca0"
     ai_diagnostic_logs      = "1b4d1c4e-934c-4703-944c-27c82c06bebb"
@@ -32,6 +31,23 @@ locals {
   # Prompt Shields filters audited on every deployment (threat model C-02), and protected material on output.
   prompt_filters     = ["Jailbreak", "Indirect Attack"]
   completion_filters = ["Protected Material Text", "Protected Material Code"]
+}
+
+# Microsoft's "Allowed Cognitive Services Kinds" built-in can only be assigned by Microsoft as a system
+# assignment, so this custom definition does the same job.
+resource "azurerm_policy_definition" "ai_allowed_kinds" {
+  name                = "${var.prefix}-pol-ai-allowed-kinds-v1"
+  display_name        = "AI services accounts should be an allowed kind"
+  policy_type         = "Custom"
+  mode                = "Indexed"
+  management_group_id = local.mg.root
+
+  parameters = jsonencode({
+    allowedKinds = { type = "Array", metadata = { displayName = "Allowed kinds" } }
+    effect       = { type = "String", allowedValues = ["Audit", "Deny", "Disabled"], defaultValue = "Deny" }
+  })
+
+  policy_rule = file("${path.module}/policies/ai-allowed-kinds.json")
 }
 
 # The tag policy Microsoft ships only denies, which would block the network watcher group Azure creates

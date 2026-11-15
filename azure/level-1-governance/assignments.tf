@@ -37,20 +37,6 @@ resource "azurerm_management_group_policy_assignment" "ai_deployments" {
   }
 }
 
-# Microsoft does not allow this built-in inside a custom initiative, so it is assigned on its own.
-resource "azurerm_management_group_policy_assignment" "ai_kinds" {
-  name                 = "${var.prefix}-ai-kinds"
-  display_name         = "AI services: AIServices kind only"
-  management_group_id  = local.mg.landingzones
-  policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/${local.builtin.ai_allowed_kinds}"
-
-  parameters = jsonencode({ allowedKinds = { value = ["AIServices"] } })
-
-  non_compliance_message {
-    content = "Only the AIServices kind may be created, so every AI account gets the same baseline (ADR-0007)."
-  }
-}
-
 resource "azurerm_management_group_policy_assignment" "corp_no_public_ip" {
   name                 = "${var.prefix}-corp-no-pip"
   display_name         = "Corp: no public IP addresses"
@@ -92,7 +78,6 @@ resource "azurerm_resource_group_policy_exemption" "study" {
   for_each = {
     ai-account     = azurerm_management_group_policy_assignment.ai_account.id
     ai-deployments = azurerm_management_group_policy_assignment.ai_deployments.id
-    ai-kinds       = azurerm_management_group_policy_assignment.ai_kinds.id
     no-pip         = azurerm_management_group_policy_assignment.corp_no_public_ip.id
   }
 
