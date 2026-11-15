@@ -53,3 +53,31 @@ jobs:
       environment: lab-azure-l2-apply
       artifact: ${{ needs.plan-management.outputs.artifact }}
     secrets: inherit
+
+  # Runs after management, even when management had nothing to apply or this is a pull request.
+  plan-connectivity:
+    needs: [plan-management, apply-management]
+    if: ${{ !failure() && !cancelled() }}
+    uses: ./.github/workflows/_plan.yml
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    with:
+      working_directory: azure/level-2-platform/connectivity
+      environment: lab-azure-l2-plan
+      comment: ${{ github.event_name == 'pull_request' }}
+    secrets: inherit
+
+  apply-connectivity:
+    needs: plan-connectivity
+    if: ${{ !failure() && !cancelled() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && needs.plan-connectivity.outputs.has_changes == 'true' }}
+    uses: ./.github/workflows/_apply.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      working_directory: azure/level-2-platform/connectivity
+      environment: lab-azure-l2-apply
+      artifact: ${{ needs.plan-connectivity.outputs.artifact }}
+    secrets: inherit

@@ -15,6 +15,8 @@ on:
         type: choice
         options:
           - check
+          - azure-l2
+          - azure-l2-connectivity
           - azure-l2-management
       confirm:
         description: Type the target again to confirm.
@@ -45,9 +47,36 @@ jobs:
   # Level destroy jobs go here, highest level first. Each one needs the job before it and runs when
   # `!failure() && !cancelled()`, so a skipped level does not stop the chain.
 
-  plan-destroy-l2-management:
+  plan-destroy-l2-connectivity:
     needs: confirm
-    if: ${{ !failure() && !cancelled() && inputs.target == 'azure-l2-management' }}
+    if: ${{ !failure() && !cancelled() && contains(fromJSON('["azure-l2", "azure-l2-connectivity"]'), inputs.target) }}
+    uses: ./.github/workflows/_plan.yml
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    with:
+      working_directory: azure/level-2-platform/connectivity
+      environment: lab-azure-l2-plan
+      destroy: true
+    secrets: inherit
+
+  destroy-l2-connectivity:
+    needs: plan-destroy-l2-connectivity
+    if: ${{ !failure() && !cancelled() && needs.plan-destroy-l2-connectivity.outputs.has_changes == 'true' }}
+    uses: ./.github/workflows/_apply.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      working_directory: azure/level-2-platform/connectivity
+      environment: lab-azure-l2-apply
+      artifact: ${{ needs.plan-destroy-l2-connectivity.outputs.artifact }}
+    secrets: inherit
+
+  plan-destroy-l2-management:
+    needs: [confirm, destroy-l2-connectivity]
+    if: ${{ !failure() && !cancelled() && contains(fromJSON('["azure-l2", "azure-l2-management"]'), inputs.target) }}
     uses: ./.github/workflows/_plan.yml
     permissions:
       contents: read
