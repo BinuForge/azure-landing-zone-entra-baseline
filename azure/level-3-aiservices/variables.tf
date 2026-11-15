@@ -40,7 +40,7 @@ variable "model_deployments" {
 variable "enable_apim" {
   description = "Deploy the APIM AI gateway. Costs about USD 1.80 a day while on and takes 30-60 minutes to deploy (docs/cost.md). Turning it on or off is a pull request."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "apim_publisher_email" {
