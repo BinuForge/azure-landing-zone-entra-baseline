@@ -29,6 +29,17 @@ variable "approved_model_asset_ids" {
   }
 }
 
+variable "apim_public_ip_exemption_expires_on" {
+  description = "When the AI gateway's public IP exemption must be reviewed, RFC 3339. At most 90 days ahead; renewing it is a pull request."
+  type        = string
+  default     = "2027-02-13T00:00:00Z"
+
+  validation {
+    condition     = can(timecmp(var.apim_public_ip_exemption_expires_on, "2026-01-01T00:00:00Z"))
+    error_message = "apim_public_ip_exemption_expires_on must be an RFC 3339 timestamp."
+  }
+}
+
 variable "study_exemption_expires_on" {
   description = "When the study group's policy waiver ends, RFC 3339. At most 30 days ahead; renewing it is a pull request."
   type        = string

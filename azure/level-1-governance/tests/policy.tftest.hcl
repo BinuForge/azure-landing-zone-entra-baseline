@@ -176,3 +176,32 @@ run "assignment_names_fit_the_management_group_limit" {
     error_message = "Assignment names at management group scope must be 24 characters or fewer."
   }
 }
+
+override_data {
+  target = data.azurerm_resource_group.aiservices
+  values = { id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/lab-rg-aiservices-prd-ae" }
+}
+
+run "apim_public_ip_exemption_is_narrow_and_mitigated" {
+  command = plan
+
+  assert {
+    condition     = azurerm_resource_group_policy_exemption.apim_public_ip.exemption_category == "Mitigated"
+    error_message = "The APIM public IP exemption is mitigated by gateway controls, not a waiver."
+  }
+
+  assert {
+    condition     = endswith(azurerm_resource_group_policy_exemption.apim_public_ip.resource_group_id, "/lab-rg-aiservices-prd-ae")
+    error_message = "The exemption may only cover the AI services group."
+  }
+}
+
+run "apim_exemption_without_review_is_rejected" {
+  command = plan
+
+  variables {
+    apim_public_ip_exemption_expires_on = "2030-01-01T00:00:00Z"
+  }
+
+  expect_failures = [azurerm_resource_group_policy_exemption.apim_public_ip]
+}
