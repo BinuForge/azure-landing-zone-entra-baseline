@@ -1,0 +1,80 @@
+{
+  "method": "Microsoft.PolicyInsights/checkPolicyRestrictions",
+  "cases": [
+    {
+      "id": "P-01",
+      "test": "A resource outside Australia is refused, even in the study group: its waiver does not cover regions",
+      "resource_group": "lab-rg-study-np-ae",
+      "api_version": "2024-05-01",
+      "expect": "denied",
+      "by": "lab-baseline",
+      "resource_type": "Microsoft.Network/publicIPAddresses",
+      "location": "westeurope",
+      "actual": "denied",
+      "refused_by": [
+        "lab-baseline",
+        "sys.blockwesteurope"
+      ],
+      "pass": true
+    },
+    {
+      "id": "P-02",
+      "test": "An AI account of a kind other than AIServices is refused in corp",
+      "resource_group": "lab-rg-aiservices-prd-ae",
+      "api_version": "2024-10-01",
+      "expect": "denied",
+      "by": "lab-ai-account",
+      "resource_type": "Microsoft.CognitiveServices/accounts",
+      "location": "australiaeast",
+      "actual": "denied",
+      "refused_by": [
+        "lab-ai-account"
+      ],
+      "pass": true
+    },
+    {
+      "id": "P-03",
+      "test": "An AI account with public network access and keys is refused in corp",
+      "resource_group": "lab-rg-aiservices-prd-ae",
+      "api_version": "2024-10-01",
+      "expect": "denied",
+      "by": "lab-ai-account",
+      "resource_type": "Microsoft.CognitiveServices/accounts",
+      "location": "australiaeast",
+      "actual": "denied",
+      "refused_by": [
+        "lab-ai-account"
+      ],
+      "pass": true
+    },
+    {
+      "id": "P-04",
+      "test": "A public IP address is refused in corp",
+      "resource_group": "lab-rg-connectivity-prd-ae",
+      "api_version": "2024-05-01",
+      "expect": "denied",
+      "by": "lab-corp-no-pip",
+      "resource_type": "Microsoft.Network/publicIPAddresses",
+      "location": "australiaeast",
+      "actual": "denied",
+      "refused_by": [
+        "lab-corp-no-pip"
+      ],
+      "pass": true
+    },
+    {
+      "id": "P-05",
+      "test": "The same public IP is allowed in the study group, through its expiring waiver",
+      "resource_group": "lab-rg-study-np-ae",
+      "api_version": "2024-05-01",
+      "expect": "allowed",
+      "resource_type": "Microsoft.Network/publicIPAddresses",
+      "location": "australiaeast",
+      "actual": "allowed",
+      "refused_by": [],
+      "pass": true
+    }
+  ],
+  "passed": 5,
+  "total": 5
+}

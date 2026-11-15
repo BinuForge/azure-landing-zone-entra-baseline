@@ -1,0 +1,103 @@
+{
+  "resources": [
+    {
+      "name": "lab-ais-aiservices-prd-ae",
+      "resourceGroup": "lab-rg-aiservices-prd-ae",
+      "type": "microsoft.cognitiveservices/accounts"
+    },
+    {
+      "name": "lab-ais-aiservices-prd-ae/opsagent",
+      "resourceGroup": "lab-rg-aiservices-prd-ae",
+      "type": "microsoft.cognitiveservices/accounts/projects"
+    },
+    {
+      "name": "lab-pe-aiservices-prd-ae.nic.<guid-1>",
+      "resourceGroup": "lab-rg-aiservices-prd-ae",
+      "type": "microsoft.network/networkinterfaces"
+    },
+    {
+      "name": "lab-nsg-apim-prd-ae",
+      "resourceGroup": "lab-rg-aiservices-prd-ae",
+      "type": "microsoft.network/networksecuritygroups"
+    },
+    {
+      "name": "lab-nsg-privateendpoints-prd-ae",
+      "resourceGroup": "lab-rg-aiservices-prd-ae",
+      "type": "microsoft.network/networksecuritygroups"
+    },
+    {
+      "name": "privatelink.openai.azure.com",
+      "resourceGroup": "lab-rg-dns-prd-ae",
+      "type": "microsoft.network/privatednszones"
+    },
+    {
+      "name": "privatelink.services.ai.azure.com",
+      "resourceGroup": "lab-rg-dns-prd-ae",
+      "type": "microsoft.network/privatednszones"
+    },
+    {
+      "name": "privatelink.cognitiveservices.azure.com",
+      "resourceGroup": "lab-rg-dns-prd-ae",
+      "type": "microsoft.network/privatednszones"
+    },
+    {
+      "name": "lab-link-aiservices-openai",
+      "resourceGroup": "lab-rg-dns-prd-ae",
+      "type": "microsoft.network/privatednszones/virtualnetworklinks"
+    },
+    {
+      "name": "lab-link-aiservices-cognitiveservices",
+      "resourceGroup": "lab-rg-dns-prd-ae",
+      "type": "microsoft.network/privatednszones/virtualnetworklinks"
+    },
+    {
+      "name": "lab-link-hub-aiservices",
+      "resourceGroup": "lab-rg-dns-prd-ae",
+      "type": "microsoft.network/privatednszones/virtualnetworklinks"
+    },
+    {
+      "name": "lab-link-hub-cognitiveservices",
+      "resourceGroup": "lab-rg-dns-prd-ae",
+      "type": "microsoft.network/privatednszones/virtualnetworklinks"
+    },
+    {
+      "name": "lab-link-hub-openai",
+      "resourceGroup": "lab-rg-dns-prd-ae",
+      "type": "microsoft.network/privatednszones/virtualnetworklinks"
+    },
+    {
+      "name": "lab-link-aiservices-aiservices",
+      "resourceGroup": "lab-rg-dns-prd-ae",
+      "type": "microsoft.network/privatednszones/virtualnetworklinks"
+    },
+    {
+      "name": "lab-pe-aiservices-prd-ae",
+      "resourceGroup": "lab-rg-aiservices-prd-ae",
+      "type": "microsoft.network/privateendpoints"
+    },
+    {
+      "name": "lab-vnet-hub-prd-ae",
+      "resourceGroup": "lab-rg-connectivity-prd-ae",
+      "type": "microsoft.network/virtualnetworks"
+    },
+    {
+      "name": "lab-vnet-aiservices-prd-ae",
+      "resourceGroup": "lab-rg-aiservices-prd-ae",
+      "type": "microsoft.network/virtualnetworks"
+    },
+    {
+      "name": "lab-log-prompts-prd-ae",
+      "resourceGroup": "lab-rg-aiservices-prd-ae",
+      "type": "microsoft.operationalinsights/workspaces"
+    },
+    {
+      "name": "lab-log-management-prd-ae",
+      "resourceGroup": "lab-rg-management-prd-ae",
+      "type": "microsoft.operationalinsights/workspaces"
+    }
+  ],
+  "billable_defender_plans": [],
+  "soft_deleted_ai_accounts": [],
+  "study_warning": [],
+  "clean": false
+}
