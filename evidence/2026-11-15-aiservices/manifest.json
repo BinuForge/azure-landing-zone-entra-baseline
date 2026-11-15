@@ -1,0 +1,17 @@
+{
+  "label": "2026-11-15-aiservices",
+  "collected_at": "2026-11-15T05:15:41Z",
+  "workflow_run": "43680265715",
+  "commit": "bf7df4762a2cd429dd359a97a709409633ea1fc2",
+  "files": [
+    "management-groups.json",
+    "hierarchy-settings.json",
+    "role-assignments.json",
+    "resources.json",
+    "cost-month-to-date.json",
+    "policy-assignments.json",
+    "policy-exemptions.json",
+    "policy-tests.json",
+    "leftovers.json"
+  ]
+}
