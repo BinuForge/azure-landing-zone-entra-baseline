@@ -70,3 +70,7 @@ jobs:
           path: ${{ runner.temp }}/evidence/
           retention-days: 90
           if-no-files-found: error
+
+      # The pack is signed and kept either way; a failed policy test then fails the run so it is seen.
+      - name: Policy tests passed
+        run: jq -e '.passed == .total' "$RUNNER_TEMP/evidence/policy-tests.json"

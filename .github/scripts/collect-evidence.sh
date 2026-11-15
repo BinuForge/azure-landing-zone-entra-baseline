@@ -40,11 +40,34 @@ az role assignment list --all --fill-principal-name false \
 # What exists: every resource in the subscription, by type, group and name.
 graph "resources | project type, resourceGroup, name, location | order by type asc" > "$OUT/resources.json"
 
-# What it costs: month to date, by service.
-az rest --method post \
-  --url "https://management.azure.com/subscriptions/$SUB/providers/Microsoft.CostManagement/query?api-version=2023-11-01" \
-  --body '{"type":"ActualCost","timeframe":"MonthToDate","dataset":{"granularity":"None","aggregation":{"cost":{"name":"Cost","function":"Sum"}},"grouping":[{"type":"Dimension","name":"ServiceName"}]}}' \
-  --query "properties.{columns:columns[].name, rows:rows}" -o json > "$OUT/cost-month-to-date.json"
+# What it costs: month to date, by service. Cost Management rate-limits hard, so retry with backoff and
+# record that cost was unavailable rather than lose the whole pack.
+cost_body='{"type":"ActualCost","timeframe":"MonthToDate","dataset":{"granularity":"None","aggregation":{"cost":{"name":"Cost","function":"Sum"}},"grouping":[{"type":"Dimension","name":"ServiceName"}]}}'
+for attempt in 1 2 3 4; do
+  if az rest --method post \
+      --url "https://management.azure.com/subscriptions/$SUB/providers/Microsoft.CostManagement/query?api-version=2023-11-01" \
+      --body "$cost_body" --query "properties.{columns:columns[].name, rows:rows}" -o json > "$OUT/cost-month-to-date.json" 2>/dev/null; then
+    break
+  fi
+  if [ "$attempt" -eq 4 ]; then
+    echo '{"unavailable": "Cost Management rate limit; retry the collection later"}' > "$OUT/cost-month-to-date.json"
+  else
+    sleep $((attempt * 20))
+  fi
+done
+
+# What is enforced: lab policy assignments and their exemptions.
+for mg in root landingzones corp; do
+  az policy assignment list --scope "/providers/Microsoft.Management/managementGroups/${PREFIX}-mg-$mg" \
+    --query "[?starts_with(name, '${PREFIX}-')].{name:name, scope:scope, enforcement:enforcementMode, definition:policyDefinitionId, parameters:parameters}" \
+    -o json
+done | jq -s 'add | unique_by(.name)' > "$OUT/policy-assignments.json"
+az policy exemption list --resource-group "${PREFIX}-rg-study-np-ae" \
+  --query "[].{name:name, category:exemptionCategory, expiresOn:expiresOn, assignment:policyAssignmentId}" -o json > "$OUT/policy-exemptions.json"
+
+# Whether it bites: each policy test validates a deployment, which runs the policy engine and creates
+# nothing (tests/policy). A failing case is recorded, not hidden; the workflow fails afterwards.
+bash "$(dirname "$0")/../../tests/policy/run.sh" "$OUT/policy-tests.json" > /dev/null || true
 
 # Anything that should not be there.
 bash "$(dirname "$0")/leftovers.sh" "$OUT/leftovers.json" > /dev/null || true
@@ -52,7 +75,7 @@ bash "$(dirname "$0")/leftovers.sh" "$OUT/leftovers.json" > /dev/null || true
 jq -n --arg label "$LABEL" --arg run "${GITHUB_RUN_ID:-local}" --arg sha "${GITHUB_SHA:-$(git rev-parse HEAD)}" \
   --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   '{label: $label, collected_at: $at, workflow_run: $run, commit: $sha,
-    files: ["management-groups.json", "hierarchy-settings.json", "role-assignments.json", "resources.json", "cost-month-to-date.json", "leftovers.json"]}' \
+    files: ["management-groups.json", "hierarchy-settings.json", "role-assignments.json", "resources.json", "cost-month-to-date.json", "policy-assignments.json", "policy-exemptions.json", "policy-tests.json", "leftovers.json"]}' \
   > "$OUT/manifest.json"
 
 echo "Collected $(ls "$OUT" | wc -l | tr -d ' ') files into $OUT"
