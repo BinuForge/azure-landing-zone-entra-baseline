@@ -35,6 +35,9 @@ locals {
     dns          = { env = "prd", workspace = "azure-l2-dns-prd" }
     aiservices   = { env = "prd", workspace = "azure-l3-aiservices-prd" }
     opsagent     = { env = "np", workspace = "azure-l4-opsagent-np" }
+    # Hands-on study and portal experiments. Level 1 gives it a time-boxed exemption from Deny policies,
+    # and the leftovers check reports what is in it without failing.
+    study = { env = "np", workspace = "study" }
   }
 }
 

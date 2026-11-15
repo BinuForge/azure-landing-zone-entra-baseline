@@ -46,6 +46,11 @@ run "resource_group_names_follow_convention" {
     condition     = azurerm_resource_group.this["aiservices"].name == "lab-rg-aiservices-prd-ae"
     error_message = "The AI services group must be lab-rg-aiservices-prd-ae."
   }
+
+  assert {
+    condition     = azurerm_resource_group.this["study"].name == "lab-rg-study-np-ae"
+    error_message = "The study group must be lab-rg-study-np-ae, the scope of the level 1 exemption."
+  }
 }
 
 run "every_group_records_its_owner_and_user" {

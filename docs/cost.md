@@ -36,6 +36,6 @@ Warn before a phase would take the total past **400**.
 
 | Root | Phase | Resources | Running total |
 |---|---|---|---|
-| `bootstrap/` | 3 | 112 (budget, 6 resource groups, lock, 11 apps, 11 service principals, 11 federated credentials, 2 custom roles, 23 role assignments, subscription placement, hierarchy settings, 9 environments, 5 branch policies, 18 variables, 18 secrets) | 118 |
-| `tfc/` | 3 | 34 (3 projects, 12 workspaces, 12 workspace settings, 1 variable set, 1 attachment, 5 variables) | 152 |
-| `azure/level-0-org` | 4 | 10 management groups | 162 |
+| `bootstrap/` | 3 | 112 (budget, 7 resource groups, lock, 11 apps, 11 service principals, 11 federated credentials, 2 custom roles, 23 role assignments, subscription placement, hierarchy settings, 9 environments, 5 branch policies, 18 variables, 18 secrets) | 119 |
+| `tfc/` | 3 | 34 (3 projects, 12 workspaces, 12 workspace settings, 1 variable set, 1 attachment, 5 variables) | 153 |
+| `azure/level-0-org` | 4 | 10 management groups | 163 |
