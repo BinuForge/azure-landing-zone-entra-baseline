@@ -1,0 +1,124 @@
+{
+  "jobs_reported": 3,
+  "total": 13,
+  "passed": 13,
+  "cases": [
+    {
+      "id": "GW-01",
+      "ref": "C-09",
+      "what": "An identity without AI.Invoke cannot get a gateway token",
+      "expect": "AADSTS501051",
+      "actual": "AADSTS501051",
+      "detail": "",
+      "pass": true
+    },
+    {
+      "id": "GW-02",
+      "ref": "T-04",
+      "what": "Only the gateway holds a data-plane role on the model",
+      "expect": "only-gateway",
+      "actual": "only-gateway",
+      "detail": "Cognitive Services OpenAI User",
+      "pass": true
+    },
+    {
+      "id": "GW-03",
+      "ref": "T-05",
+      "what": "The model account refuses API keys",
+      "expect": "keys-off",
+      "actual": "keys-off",
+      "detail": "",
+      "pass": true
+    },
+    {
+      "id": "GW-04",
+      "ref": "T-06",
+      "what": "The model account refuses public traffic",
+      "expect": "Disabled",
+      "actual": "Disabled",
+      "detail": "",
+      "pass": true
+    },
+    {
+      "id": "GW-05",
+      "ref": "C-09",
+      "what": "A call with no token is refused",
+      "expect": "401",
+      "actual": "401",
+      "detail": "",
+      "pass": true
+    },
+    {
+      "id": "GW-06",
+      "ref": "C-09",
+      "what": "A token for another audience is refused",
+      "expect": "401",
+      "actual": "401",
+      "detail": "",
+      "pass": true
+    },
+    {
+      "id": "GW-07",
+      "ref": "C-08",
+      "what": "A gateway token with AI.Invoke reaches the model",
+      "expect": "200",
+      "actual": "200",
+      "detail": "model gpt-5-mini-2025-08-07, 150 tokens",
+      "pass": true
+    },
+    {
+      "id": "GW-08",
+      "ref": "C-24",
+      "what": "A deployment that does not exist is not served",
+      "expect": "404",
+      "actual": "404",
+      "detail": "",
+      "pass": true
+    },
+    {
+      "id": "GW-09",
+      "ref": "T-04",
+      "what": "A direct call to the model, skipping the gateway, is refused",
+      "expect": "401-no-role|403|no-response",
+      "actual": "401-no-role",
+      "detail": "",
+      "pass": true
+    },
+    {
+      "id": "GW-10",
+      "ref": "T-11",
+      "what": "Calls past the caller's token limit are refused",
+      "expect": "429",
+      "actual": "429",
+      "detail": "after 3 calls",
+      "pass": true
+    },
+    {
+      "id": "GW-11",
+      "ref": "C-20",
+      "what": "With the switch off, the gateway asks for identity",
+      "expect": "401",
+      "actual": "401",
+      "detail": "",
+      "pass": true
+    },
+    {
+      "id": "GW-12",
+      "ref": "T-15",
+      "what": "The kill switch stops every call within 60 seconds",
+      "expect": "503",
+      "actual": "503",
+      "detail": "34s from the switch command",
+      "pass": true
+    },
+    {
+      "id": "GW-13",
+      "ref": "C-20",
+      "what": "Turning the switch off restores the gateway",
+      "expect": "401",
+      "actual": "401",
+      "detail": "13s",
+      "pass": true
+    }
+  ]
+}
