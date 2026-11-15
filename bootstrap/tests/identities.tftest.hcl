@@ -105,3 +105,27 @@ run "branch_based_github_prefix_is_rejected" {
 
   expect_failures = [var.github_oidc_subject_prefix]
 }
+
+run "gateway_grants_ai_invoke_to_the_runner_only" {
+  command = plan
+
+  assert {
+    condition     = one(azuread_application.gateway.app_role).value == "AI.Invoke" && one(azuread_application.gateway.app_role).allowed_member_types == toset(["Application"])
+    error_message = "The gateway must define one application role, AI.Invoke."
+  }
+
+  assert {
+    condition     = keys(azuread_app_role_assignment.gateway_invoke) == ["azure-l4-opsagent-run"]
+    error_message = "Only the ops agent runner may call the AI gateway."
+  }
+
+  assert {
+    condition     = azuread_service_principal.gateway.app_role_assignment_required == true
+    error_message = "Unassigned identities must not be able to get a token for the gateway."
+  }
+
+  assert {
+    condition     = one(azuread_application.gateway.identifier_uris) == "api://00000000-0000-0000-0000-000000000002/lab-aigateway"
+    error_message = "The gateway identifier must be tenant-scoped, so level 3 can build the same audience."
+  }
+}
