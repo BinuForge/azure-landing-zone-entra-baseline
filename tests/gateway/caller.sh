@@ -39,11 +39,13 @@ record GW-07 C-08 "A gateway token with AI.Invoke reaches the model" 200 "$code"
 record GW-08 C-24 "A deployment that does not exist is not served" 404 \
   "$(chat gpt-4o "$gateway_token" "$PING")"
 
-# Straight to the model with the runner's own token, skipping the gateway.
+# Straight to the model with the runner's own token, skipping the gateway. Foundry checks the caller's
+# role before its network rules, so a caller with no role is refused there and the network layer is not
+# reached; GW-04 covers that layer by its setting.
 code="$(http "$FOUNDRY/deployments/$DEPLOYMENT/chat/completions?$API" -X POST \
   -H "Authorization: Bearer $other_token" -H "Content-Type: application/json" -d "$PING")"
-record GW-09 "T-04, T-06" "A direct call to the model from the internet fails" "403|no-response" "$code" \
-  "$(jq -r '.error.message // empty' "$BODY" 2>/dev/null | head -c 120 || true)"
+if [ "$code" = 401 ] && grep -q "lacks the required data action" "$BODY"; then code=401-no-role; fi
+record GW-09 T-04 "A direct call to the model, skipping the gateway, is refused" "401-no-role|403|no-response" "$code"
 
 limit=none
 for i in $(seq 1 15); do
