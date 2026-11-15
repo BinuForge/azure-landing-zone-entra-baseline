@@ -43,13 +43,23 @@ run "ai_baseline_covers_landing_zones" {
   command = plan
 
   assert {
-    condition     = azurerm_management_group_policy_assignment.ai.management_group_id == "/providers/Microsoft.Management/managementGroups/lab-mg-landingzones"
-    error_message = "The AI baseline must apply to every landing zone, including corp."
+    condition = alltrue([for a in [azurerm_management_group_policy_assignment.ai_account, azurerm_management_group_policy_assignment.ai_deployments] :
+    a.management_group_id == "/providers/Microsoft.Management/managementGroups/lab-mg-landingzones"])
+    error_message = "Both AI baselines must apply to every landing zone, including corp."
   }
 
   assert {
-    condition     = jsondecode(azurerm_management_group_policy_assignment.ai.parameters).approvedModelAssetIds.value == ["azureml://registries/azure-openai/models/gpt-4.1-mini/", "azureml://registries/azure-openai/models/gpt-5-mini/"]
+    condition     = jsondecode(azurerm_management_group_policy_assignment.ai_deployments.parameters).approvedModelAssetIds.value == ["azureml://registries/azure-openai/models/gpt-4.1-mini/", "azureml://registries/azure-openai/models/gpt-5-mini/"]
     error_message = "Only gpt-4.1-mini and gpt-5-mini are approved."
+  }
+}
+
+run "account_and_data_plane_policies_are_not_mixed" {
+  command = plan
+
+  assert {
+    condition     = length(setintersection(toset([for r in azurerm_management_group_policy_set_definition.ai_account.policy_definition_reference : r.reference_id]), toset([for r in azurerm_management_group_policy_set_definition.ai_deployments.policy_definition_reference : r.reference_id]))) == 0
+    error_message = "Account-plane and data-plane policies must sit in separate initiatives."
   }
 }
 
@@ -58,7 +68,7 @@ run "generally_available_ai_controls_deny" {
 
   assert {
     condition = alltrue([
-      for ref in azurerm_management_group_policy_set_definition.ai.policy_definition_reference :
+      for ref in concat(azurerm_management_group_policy_set_definition.ai_account.policy_definition_reference, azurerm_management_group_policy_set_definition.ai_deployments.policy_definition_reference) :
       jsondecode(ref.parameter_values).effect.value == "Deny"
       if contains(["restrictNetworkAccess", "disableLocalAuth", "approvedModels", "modelEligibility"], ref.reference_id)
     ])
@@ -67,7 +77,7 @@ run "generally_available_ai_controls_deny" {
 
   assert {
     condition = alltrue([
-      for ref in azurerm_management_group_policy_set_definition.ai.policy_definition_reference :
+      for ref in azurerm_management_group_policy_set_definition.ai_deployments.policy_definition_reference :
       jsondecode(ref.parameter_values).effect.value == "Audit"
       if startswith(ref.reference_id, "promptFilter") || startswith(ref.reference_id, "completionFilter")
     ])
@@ -75,7 +85,7 @@ run "generally_available_ai_controls_deny" {
   }
 
   assert {
-    condition     = length([for ref in azurerm_management_group_policy_set_definition.ai.policy_definition_reference : ref if startswith(ref.reference_id, "promptFilter")]) == 2
+    condition     = length([for ref in azurerm_management_group_policy_set_definition.ai_deployments.policy_definition_reference : ref if startswith(ref.reference_id, "promptFilter")]) == 2
     error_message = "Prompt Shields jailbreak and indirect attack filters must both be audited."
   }
 }
@@ -104,6 +114,25 @@ run "benchmark_audits_only" {
   assert {
     condition     = azurerm_management_group_policy_assignment.mcsb.enforce == false
     error_message = "The Microsoft cloud security benchmark is assigned for visibility, not enforcement."
+  }
+
+  assert {
+    condition     = one(azurerm_management_group_policy_assignment.mcsb.identity).type == "SystemAssigned"
+    error_message = "Azure requires an identity on the benchmark assignment because it contains DeployIfNotExists policies."
+  }
+}
+
+run "only_aiservices_kind_is_allowed" {
+  command = plan
+
+  assert {
+    condition     = jsondecode(azurerm_management_group_policy_assignment.ai_kinds.parameters).allowedKinds.value == ["AIServices"]
+    error_message = "Only the AIServices kind may be created in landing zones."
+  }
+
+  assert {
+    condition     = azurerm_management_group_policy_assignment.ai_kinds.management_group_id == "/providers/Microsoft.Management/managementGroups/lab-mg-landingzones"
+    error_message = "The kind restriction must cover every landing zone."
   }
 }
 
@@ -137,7 +166,9 @@ run "assignment_names_fit_the_management_group_limit" {
   assert {
     condition = alltrue([for n in [
       azurerm_management_group_policy_assignment.baseline.name,
-      azurerm_management_group_policy_assignment.ai.name,
+      azurerm_management_group_policy_assignment.ai_account.name,
+      azurerm_management_group_policy_assignment.ai_deployments.name,
+      azurerm_management_group_policy_assignment.ai_kinds.name,
       azurerm_management_group_policy_assignment.corp_no_public_ip.name,
       azurerm_management_group_policy_assignment.mcsb.name,
     ] : length(n) <= 24])

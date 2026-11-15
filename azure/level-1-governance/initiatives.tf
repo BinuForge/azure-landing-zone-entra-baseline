@@ -1,15 +1,12 @@
 # Deny where Microsoft's policy is generally available; Audit where it is preview, because a preview policy
 # that denies can break deployments when Microsoft changes it.
-resource "azurerm_management_group_policy_set_definition" "ai" {
-  name                = "${var.prefix}-ini-ai-baseline-v1"
-  display_name        = "Lab AI services baseline v1"
-  description         = "Private, keyless Foundry with approved models and guardrails (threat-model-ai.md, ADR-0008)."
+# The account plane: how the Foundry account itself is exposed and authenticated.
+resource "azurerm_management_group_policy_set_definition" "ai_account" {
+  name                = "${var.prefix}-ini-ai-account-v1"
+  display_name        = "Lab AI services account baseline v1"
+  description         = "Private, keyless, logged Foundry accounts (threat-model-ai.md C-07, C-08, C-15)."
   policy_type         = "Custom"
   management_group_id = local.mg.root
-
-  parameters = jsonencode({
-    approvedModelAssetIds = { type = "Array", metadata = { displayName = "Approved model asset IDs" } }
-  })
 
   policy_definition_reference {
     reference_id         = "restrictNetworkAccess"
@@ -24,10 +21,30 @@ resource "azurerm_management_group_policy_set_definition" "ai" {
   }
 
   policy_definition_reference {
-    reference_id         = "allowedKinds"
-    policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/${local.builtin.ai_allowed_kinds}"
-    parameter_values     = jsonencode({ allowedKinds = { value = ["AIServices"] } })
+    reference_id         = "diagnosticLogs"
+    policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/${local.builtin.ai_diagnostic_logs}"
+    parameter_values     = jsonencode({ effect = { value = "AuditIfNotExists" } })
   }
+
+  policy_definition_reference {
+    reference_id         = "privateLink"
+    policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/${local.builtin.ai_private_link}"
+    parameter_values     = jsonencode({ effect = { value = "Audit" } })
+  }
+}
+
+# The data plane: what may run on an account. These policies use the Microsoft.CognitiveServices.Data
+# mode, so they are kept apart from the account-plane initiative.
+resource "azurerm_management_group_policy_set_definition" "ai_deployments" {
+  name                = "${var.prefix}-ini-ai-deployments-v1"
+  display_name        = "Lab AI model deployment baseline v1"
+  description         = "Approved, generally available models with Prompt Shields and protected-material filters (C-02, C-24)."
+  policy_type         = "Custom"
+  management_group_id = local.mg.root
+
+  parameters = jsonencode({
+    approvedModelAssetIds = { type = "Array", metadata = { displayName = "Approved model asset IDs" } }
+  })
 
   policy_definition_reference {
     reference_id         = "approvedModels"
@@ -47,18 +64,6 @@ resource "azurerm_management_group_policy_set_definition" "ai" {
       denyPreviewModels        = { value = true }
       onlyAllowDirectFromAzure = { value = true }
     })
-  }
-
-  policy_definition_reference {
-    reference_id         = "diagnosticLogs"
-    policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/${local.builtin.ai_diagnostic_logs}"
-    parameter_values     = jsonencode({ effect = { value = "AuditIfNotExists" } })
-  }
-
-  policy_definition_reference {
-    reference_id         = "privateLink"
-    policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/${local.builtin.ai_private_link}"
-    parameter_values     = jsonencode({ effect = { value = "Audit" } })
   }
 
   dynamic "policy_definition_reference" {
