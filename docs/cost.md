@@ -42,3 +42,4 @@ Warn before a phase would take the total past **400**.
 | `azure/level-1-governance` | 4 | 12 (2 custom definitions, 3 initiatives, 4 assignments, 3 exemptions) | 175 |
 | `azure/level-2-platform/management` | 4 | 1 Log Analytics workspace | 176 |
 | `azure/level-2-platform/connectivity` | 4 | 3 (hub VNet, 2 reserved subnets) | 179 |
+| `azure/level-2-platform/dns` | 4 | 6 (3 private DNS zones, 3 hub links) | 185 |
