@@ -246,4 +246,9 @@ run "apim_subnet_denies_other_internet_egress" {
     condition     = azurerm_network_security_rule.apim["deny-internet-outbound"].access == "Deny" && azurerm_network_security_rule.apim["deny-internet-outbound"].destination_address_prefix == "Internet"
     error_message = "The APIM subnet must deny outbound internet traffic apart from the listed dependencies."
   }
+
+  assert {
+    condition     = alltrue([for r in azurerm_network_security_rule.apim : r.destination_port_ranges == null || !contains(r.destination_port_ranges, "*")])
+    error_message = "Azure rejects '*' inside a list of port ranges; any-port rules must use destination_port_range."
+  }
 }
