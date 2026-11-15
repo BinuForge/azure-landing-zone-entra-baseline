@@ -5,8 +5,9 @@ turning it on and off, calling it, and the kill switch.
 
 ## Turn it on or off
 
-`enable_apim` in `azure/level-3-aiservices/variables.tf` defaults to `false`. Changing the default is a
-pull request; the `azure-l3` pipeline then plans and applies it after approval.
+`enable_apim` in `azure/level-3-aiservices/variables.tf` is `true` during the test sessions and `false`
+otherwise. Changing it is a pull request; the `azure-l3` pipeline then plans and applies it after
+approval. `destroy.yml` removes the gateway with the rest of level 3.
 
 | | On | Off |
 |---|---|---|
@@ -22,8 +23,9 @@ Callers need an Entra token for the gateway with the `AI.Invoke` role. Only `lab
 holds it (bootstrap/gateway.tf). From a job signed in as that identity:
 
 ```sh
-AUDIENCE="$(terraform -chdir=azure/level-3-aiservices output -raw gateway_audience)"
-GATEWAY="$(terraform -chdir=azure/level-3-aiservices output -raw gateway_url)"
+# The runner cannot read Terraform outputs, so it builds the same values level 3 does.
+AUDIENCE="api://$AZURE_TENANT_ID/lab-aigateway"
+GATEWAY="https://lab-apim-aiservices-prd-ae.azure-api.net/openai"
 TOKEN="$(az account get-access-token --resource "$AUDIENCE" --query accessToken -o tsv)"
 
 curl -s "$GATEWAY/deployments/gpt-5-mini/chat/completions?api-version=2024-10-21" \
@@ -59,3 +61,17 @@ az apim nv update -g "$RG" -n "$APIM" --named-value-id ai-kill-switch --value fa
 
 Record every use: when, why, and when it was resumed. A second line of defence, slower but independent of
 APIM, is removing APIM's `Cognitive Services OpenAI User` role on the Foundry account.
+
+The lab flips the switch with the level 3 apply identity, behind an approval. At bank scale it would be a
+dedicated gateway-operator role, activated through PIM, that can only write named values, so the people
+who can stop AI traffic do not also hold deploy rights.
+
+## Test it
+
+Run `gateway-tests` from the Actions tab with a label such as `2026-11-15-gateway`. It runs 13 cases as
+three identities, and the kill switch job waits for approval in `lab-azure-l3-apply`. Then bring the
+signed results in:
+
+```sh
+bash .github/scripts/pull-evidence.sh <run-id> <label> gateway-tests.yml
+```
