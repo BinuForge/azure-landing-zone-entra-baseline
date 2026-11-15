@@ -65,8 +65,9 @@ done | jq -s 'add | unique_by(.name)' > "$OUT/policy-assignments.json"
 az policy exemption list --resource-group "${PREFIX}-rg-study-np-ae" \
   --query "[].{name:name, category:exemptionCategory, expiresOn:expiresOn, assignment:policyAssignmentId}" -o json > "$OUT/policy-exemptions.json"
 
-# Whether it bites: each policy test validates a deployment, which runs the policy engine and creates
-# nothing (tests/policy). A failing case is recorded, not hidden; the workflow fails afterwards.
+# Whether it bites: each policy test asks Azure Policy what it would do with a proposed resource, which
+# creates nothing and needs only Reader (tests/policy). A failing case is recorded, not hidden; the
+# workflow fails afterwards.
 bash "$(dirname "$0")/../../tests/policy/run.sh" "$OUT/policy-tests.json" > /dev/null || true
 
 # Anything that should not be there.

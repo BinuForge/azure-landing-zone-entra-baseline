@@ -1,41 +1,78 @@
 [
   {
     "id": "P-01",
-    "test": "A resource group outside Australia is refused",
-    "scope": "subscription",
-    "template": "rg-westeurope.json",
+    "test": "A resource outside Australia is refused, even in the study group: its waiver does not cover regions",
+    "resource_group": "lab-rg-study-np-ae",
+    "api_version": "2024-05-01",
+    "resource": {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "lab-pip-policytest",
+      "location": "westeurope",
+      "sku": { "name": "Standard" },
+      "properties": { "publicIPAllocationMethod": "Static" }
+    },
     "expect": "denied",
     "by": "lab-baseline"
   },
   {
     "id": "P-02",
     "test": "An AI account of a kind other than AIServices is refused in corp",
-    "scope": "lab-rg-aiservices-prd-ae",
-    "template": "openai-kind.json",
+    "resource_group": "lab-rg-aiservices-prd-ae",
+    "api_version": "2024-10-01",
+    "resource": {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "name": "lab-policytest-oai",
+      "location": "australiaeast",
+      "kind": "OpenAI",
+      "sku": { "name": "S0" },
+      "properties": { "publicNetworkAccess": "Disabled", "disableLocalAuth": true }
+    },
     "expect": "denied",
     "by": "lab-ai-account"
   },
   {
     "id": "P-03",
     "test": "An AI account with public network access and keys is refused in corp",
-    "scope": "lab-rg-aiservices-prd-ae",
-    "template": "public-keys.json",
+    "resource_group": "lab-rg-aiservices-prd-ae",
+    "api_version": "2024-10-01",
+    "resource": {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "name": "lab-policytest-ais",
+      "location": "australiaeast",
+      "kind": "AIServices",
+      "sku": { "name": "S0" },
+      "properties": { "publicNetworkAccess": "Enabled", "disableLocalAuth": false }
+    },
     "expect": "denied",
     "by": "lab-ai-account"
   },
   {
     "id": "P-04",
     "test": "A public IP address is refused in corp",
-    "scope": "lab-rg-connectivity-prd-ae",
-    "template": "public-ip.json",
+    "resource_group": "lab-rg-connectivity-prd-ae",
+    "api_version": "2024-05-01",
+    "resource": {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "lab-pip-policytest",
+      "location": "australiaeast",
+      "sku": { "name": "Standard" },
+      "properties": { "publicIPAllocationMethod": "Static" }
+    },
     "expect": "denied",
     "by": "lab-corp-no-pip"
   },
   {
     "id": "P-05",
     "test": "The same public IP is allowed in the study group, through its expiring waiver",
-    "scope": "lab-rg-study-np-ae",
-    "template": "public-ip.json",
+    "resource_group": "lab-rg-study-np-ae",
+    "api_version": "2024-05-01",
+    "resource": {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "lab-pip-policytest",
+      "location": "australiaeast",
+      "sku": { "name": "Standard" },
+      "properties": { "publicIPAllocationMethod": "Static" }
+    },
     "expect": "allowed"
   }
 ]
