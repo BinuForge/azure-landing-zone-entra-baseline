@@ -39,9 +39,11 @@ resource "azurerm_network_security_rule" "apim" {
   access                      = try(each.value.access, "Allow")
   protocol                    = "Tcp"
   source_port_range           = "*"
-  destination_port_ranges     = each.value.ports
-  source_address_prefix       = each.value.source
-  destination_address_prefix  = each.value.destination
+  # Azure accepts "*" only as a single range, never inside a list of ranges.
+  destination_port_range     = contains(each.value.ports, "*") ? "*" : null
+  destination_port_ranges    = contains(each.value.ports, "*") ? null : each.value.ports
+  source_address_prefix      = each.value.source
+  destination_address_prefix = each.value.destination
 }
 
 resource "azurerm_public_ip" "apim" {
