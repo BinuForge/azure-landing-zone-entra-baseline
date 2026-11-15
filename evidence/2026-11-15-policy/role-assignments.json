@@ -1,0 +1,140 @@
+[
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Contributor",
+    "scope": "/subscriptions/<subscription>/resourceGroups/lab-rg-aiservices-prd-ae"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Contributor",
+    "scope": "/subscriptions/<subscription>/resourceGroups/lab-rg-management-prd-ae"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Contributor",
+    "scope": "/subscriptions/<subscription>/resourceGroups/lab-rg-opsagent-np-ae"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Management Group Contributor",
+    "scope": "/providers/Microsoft.Management/managementGroups/<tenant>"
+  },
+  {
+    "conditional": false,
+    "principalType": "User",
+    "role": "Management Group Contributor",
+    "scope": "/providers/Microsoft.Management/managementGroups/lab-mg-corp"
+  },
+  {
+    "conditional": false,
+    "principalType": "User",
+    "role": "Management Group Reader",
+    "scope": "/providers/Microsoft.Management/managementGroups/lab-mg-root"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Network Contributor",
+    "scope": "/subscriptions/<subscription>/resourceGroups/lab-rg-connectivity-prd-ae"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Private DNS Zone Contributor",
+    "scope": "/subscriptions/<subscription>/resourceGroups/lab-rg-dns-prd-ae"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Reader",
+    "scope": "/providers/Microsoft.Management/managementGroups/<tenant>"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Reader",
+    "scope": "/providers/Microsoft.Management/managementGroups/<tenant>"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Reader",
+    "scope": "/subscriptions/<subscription>"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Reader",
+    "scope": "/subscriptions/<subscription>/resourceGroups/lab-rg-aiservices-prd-ae"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Reader",
+    "scope": "/subscriptions/<subscription>/resourceGroups/lab-rg-connectivity-prd-ae"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Reader",
+    "scope": "/subscriptions/<subscription>/resourceGroups/lab-rg-connectivity-prd-ae"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Reader",
+    "scope": "/subscriptions/<subscription>/resourceGroups/lab-rg-dns-prd-ae"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Reader",
+    "scope": "/subscriptions/<subscription>/resourceGroups/lab-rg-dns-prd-ae"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Reader",
+    "scope": "/subscriptions/<subscription>/resourceGroups/lab-rg-management-prd-ae"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "Resource Policy Contributor",
+    "scope": "/providers/Microsoft.Management/managementGroups/<tenant>"
+  },
+  {
+    "conditional": true,
+    "principalType": "ServicePrincipal",
+    "role": "Role Based Access Control Administrator",
+    "scope": "/subscriptions/<subscription>"
+  },
+  {
+    "conditional": true,
+    "principalType": "ServicePrincipal",
+    "role": "Role Based Access Control Administrator",
+    "scope": "/subscriptions/<subscription>/resourceGroups/lab-rg-aiservices-prd-ae"
+  },
+  {
+    "conditional": false,
+    "principalType": "User",
+    "role": "lab-role-hierarchy-settings",
+    "scope": "/providers/Microsoft.Management/managementGroups/<tenant>"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "lab-role-spoke-network-join",
+    "scope": "/subscriptions/<subscription>/resourceGroups/lab-rg-connectivity-prd-ae"
+  },
+  {
+    "conditional": false,
+    "principalType": "ServicePrincipal",
+    "role": "lab-role-spoke-network-join",
+    "scope": "/subscriptions/<subscription>/resourceGroups/lab-rg-dns-prd-ae"
+  }
+]
