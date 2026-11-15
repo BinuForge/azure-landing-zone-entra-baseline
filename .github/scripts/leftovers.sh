@@ -46,20 +46,26 @@ deleted_ai="$(az rest --method get \
   --url "https://management.azure.com/subscriptions/$SUB/providers/Microsoft.CognitiveServices/deletedAccounts?api-version=2024-10-01" \
   --query "value[].{name:name, location:location}" -o json)"
 
-report="$(jq -n --argjson r "$resources" --argjson d "$defender" --argjson a "$deleted_ai" --argjson s "$study" \
-  '{resources: $r, billable_defender_plans: $d, soft_deleted_ai_accounts: $a, study_warning: $s,
-    clean: (($r | length) == 0 and ($d | length) == 0 and ($a | length) == 0)}')"
+# A deleted APIM is soft-deleted for 48 hours with its name reserved.
+deleted_apim="$(az rest --method get \
+  --url "https://management.azure.com/subscriptions/$SUB/providers/Microsoft.ApiManagement/deletedservices?api-version=2022-08-01" \
+  --query "value[].{name:name, location:location}" -o json)"
+
+report="$(jq -n --argjson r "$resources" --argjson d "$defender" --argjson a "$deleted_ai" --argjson m "$deleted_apim" --argjson s "$study" \
+  '{resources: $r, billable_defender_plans: $d, soft_deleted_ai_accounts: $a, soft_deleted_apim: $m, study_warning: $s,
+    clean: (($r | length) == 0 and ($d | length) == 0 and ($a | length) == 0 and ($m | length) == 0)}')"
 
 [ -n "$OUT" ] && echo "$report" > "$OUT"
 
 summary="$(echo "$report" | jq -r '
   "### Leftovers check\n",
-  (if .clean then "Clean: nothing outside bootstrap, no billable Defender plans, no soft-deleted AI accounts."
+  (if .clean then "Clean: nothing outside bootstrap, no billable Defender plans, no soft-deleted AI accounts or APIM."
    else
      "| Kind | Type or plan | Resource group | Name |\n|---|---|---|---|",
      (.resources[] | "| Resource | `\(.type)` | `\(.resourceGroup)` | `\(.name)` |"),
      (.billable_defender_plans[] | "| Defender plan | `\(.)` | | |"),
-     (.soft_deleted_ai_accounts[] | "| Soft-deleted AI account | | | `\(.name)` (\(.location)) |")
+     (.soft_deleted_ai_accounts[] | "| Soft-deleted AI account | | | `\(.name)` (\(.location)) |"),
+     (.soft_deleted_apim[] | "| Soft-deleted APIM | | | `\(.name)` (\(.location)) |")
    end),
   (if (.study_warning | length) > 0 then
      "\nWarning: \(.study_warning | length) resource(s) in the study group. Not a failure; delete them when done:",

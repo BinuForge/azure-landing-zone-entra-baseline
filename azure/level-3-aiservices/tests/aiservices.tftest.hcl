@@ -13,6 +13,11 @@ mock_provider "azurerm" {
 mock_provider "tfe" {}
 
 override_data {
+  target = data.azurerm_client_config.current
+  values = { tenant_id = "00000000-0000-0000-0000-000000000002" }
+}
+
+override_data {
   target          = data.tfe_outputs.management
   override_during = plan
   values = {
@@ -172,5 +177,73 @@ run "prompt_logging_flag_sends_content_to_the_prompt_workspace_only" {
   assert {
     condition     = length(azurerm_monitor_diagnostic_setting.foundry_prompts) == 1
     error_message = "With the flag on, request and response content must be logged."
+  }
+}
+
+run "gateway_is_off_by_default_and_costs_nothing" {
+  command = plan
+
+  assert {
+    condition     = length(azurerm_api_management.this) == 0 && length(azurerm_public_ip.apim) == 0
+    error_message = "APIM and its public IP must not exist unless enable_apim is true."
+  }
+}
+
+run "gateway_when_on_is_external_with_identity_and_one_role" {
+  command = plan
+
+  variables {
+    enable_apim = true
+  }
+
+  assert {
+    condition     = azurerm_api_management.this[0].sku_name == "Developer_1" && azurerm_api_management.this[0].virtual_network_type == "External"
+    error_message = "The gateway is APIM Developer in external VNet mode (ADR-0008)."
+  }
+
+  assert {
+    condition     = azurerm_role_assignment.apim_openai_user[0].role_definition_name == "Cognitive Services OpenAI User"
+    error_message = "APIM's identity must hold OpenAI User, the inference-only role without listkeys."
+  }
+
+  assert {
+    condition     = azurerm_api_management_api.openai[0].subscription_required == false
+    error_message = "Callers authenticate with Entra tokens, never subscription keys."
+  }
+
+  assert {
+    condition     = length(azurerm_api_management_api_operation.chat) == 1 && azurerm_api_management_api_operation.chat[0].url_template == "/deployments/{deployment-id}/chat/completions"
+    error_message = "Only chat completions may be exposed through the gateway."
+  }
+}
+
+run "gateway_policy_enforces_identity_limit_kill_switch_and_identity_swap" {
+  command = plan
+
+  variables {
+    enable_apim = true
+  }
+
+  assert {
+    condition = alltrue([for fragment in [
+      "<validate-jwt",
+      "<audience>api://00000000-0000-0000-0000-000000000002/lab-aigateway</audience>",
+      "<value>AI.Invoke</value>",
+      "{{ai-kill-switch}}",
+      "<llm-token-limit",
+      "tokens-per-minute=\"2000\"",
+      "<set-header name=\"Authorization\" exists-action=\"delete\" />",
+      "<authentication-managed-identity resource=\"https://cognitiveservices.azure.com\" />",
+    ] : strcontains(azurerm_api_management_api_policy.openai[0].xml_content, fragment)])
+    error_message = "The gateway policy must check the Entra role, limit tokens, honour the kill switch and swap to APIM's identity."
+  }
+}
+
+run "apim_subnet_denies_other_internet_egress" {
+  command = plan
+
+  assert {
+    condition     = azurerm_network_security_rule.apim["deny-internet-outbound"].access == "Deny" && azurerm_network_security_rule.apim["deny-internet-outbound"].destination_address_prefix == "Internet"
+    error_message = "The APIM subnet must deny outbound internet traffic apart from the listed dependencies."
   }
 }

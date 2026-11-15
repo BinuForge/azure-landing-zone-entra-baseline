@@ -33,6 +33,7 @@ AZURE_SUBSCRIPTION_ID="$(az account show --query id -o tsv)" bash .github/script
 | Any resource outside the bootstrap group | Created by hand, or missed by a destroy | Resource Graph, excluding expected types |
 | A Defender plan above Free | A subscription setting, not a resource | Security pricings API. `Discovery` and `FoundationalCspm` report Standard but are free, and are allowed |
 | A soft-deleted Foundry account | Deleting a Cognitive Services account soft-deletes it | Deleted accounts API. Purge with `az cognitiveservices account purge` |
+| A soft-deleted APIM | Deleting APIM keeps it for 48 hours with its name reserved | Deleted services API. Level 3 purges on destroy; otherwise `az apim deletedservice purge` |
 
 Anything in `lab-rg-study-np-ae`, the study group, is listed as a warning and never fails the check.
 
