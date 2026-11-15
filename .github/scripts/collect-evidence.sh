@@ -20,7 +20,9 @@ graph() {
 }
 
 # Where things sit: the management group tree and the subscription's place in it.
-az account management-group show --name "${PREFIX}-mg-root" --expand --recurse -o json \
+# --no-register: without it the CLI tries to register Microsoft.Management on every call, a write action
+# this read-only identity is rightly refused. Bootstrap registers providers.
+az account management-group show --name "${PREFIX}-mg-root" --expand --recurse --no-register -o json \
   | jq 'def walk_mg: {name, displayName, type: (.type | split("/") | last),
           children: [(.children // [])[] | walk_mg]}; walk_mg' > "$OUT/management-groups.json"
 
