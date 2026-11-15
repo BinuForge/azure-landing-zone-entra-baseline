@@ -4,6 +4,7 @@ mock_provider "azurerm" {
 
   mock_data "azurerm_resource_group" {
     defaults = {
+      id       = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/lab-rg-aiservices-prd-ae"
       name     = "lab-rg-aiservices-prd-ae"
       location = "australiaeast"
     }
@@ -17,6 +18,8 @@ mock_provider "azurerm" {
 }
 
 mock_provider "tfe" {}
+
+mock_provider "azapi" {}
 
 override_data {
   target = data.azurerm_client_config.current
@@ -194,7 +197,7 @@ run "gateway_off_costs_nothing" {
   }
 
   assert {
-    condition     = length(azurerm_api_management.this) == 0 && length(azurerm_public_ip.apim) == 0
+    condition     = length(azapi_resource.apim) == 0 && length(azurerm_public_ip.apim) == 0
     error_message = "APIM and its public IP must not exist unless enable_apim is true."
   }
 }
@@ -207,7 +210,7 @@ run "gateway_when_on_is_external_with_identity_and_one_role" {
   }
 
   assert {
-    condition     = azurerm_api_management.this[0].sku_name == "Developer_1" && azurerm_api_management.this[0].virtual_network_type == "External"
+    condition     = azapi_resource.apim[0].body.sku.name == "Developer" && azapi_resource.apim[0].body.properties.virtualNetworkType == "External"
     error_message = "The gateway is APIM Developer in external VNet mode (ADR-0008)."
   }
 
@@ -314,4 +317,35 @@ run "one_caller_cannot_take_a_whole_deployment" {
   }
 
   expect_failures = [azurerm_api_management_api_policy.openai]
+}
+
+run "gateway_refuses_old_tls_and_weak_ciphers" {
+  command = plan
+
+  variables {
+    enable_apim = true
+  }
+
+  assert {
+    condition = alltrue([for k in [
+      "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Protocols.Tls10",
+      "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Protocols.Tls11",
+      "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Backend.Protocols.Tls10",
+      "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Ciphers.TripleDes168",
+    ] : azapi_resource.apim[0].body.properties.customProperties[k] == "false"])
+    error_message = "The gateway must refuse TLS 1.0 and 1.1, to callers and backends, and 3DES."
+  }
+}
+
+run "deleted_gateway_is_purged_on_destroy_only" {
+  command = plan
+
+  variables {
+    enable_apim = true
+  }
+
+  assert {
+    condition     = azapi_resource_action.apim_purge[0].when == "destroy" && azapi_resource_action.apim_purge[0].method == "DELETE"
+    error_message = "The purge must run at destroy time only, so a teardown leaves no reserved name."
+  }
 }

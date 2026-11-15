@@ -59,31 +59,92 @@ resource "azurerm_public_ip" "apim" {
   tags                = local.tags
 }
 
-resource "azurerm_api_management" "this" {
+# The APIM service is managed with azapi, not azurerm (ADR-0005). azurerm's read lists the developer
+# portal's delegation key and the tenant access keys on every plan, so a read-only plan identity cannot
+# plan, and those secrets sit in state. azapi reads with a plain GET: no secret is read or stored.
+# Microsoft.ApiManagement/service, API version 2024-05-01.
+moved {
+  from = azurerm_api_management.this[0]
+  to   = azapi_resource.apim[0]
+}
+
+locals {
+  apim_name = "${var.prefix}-apim-aiservices-prd-ae"
+
+  # TLS 1.2 or later only, at the gateway and to backends; no 3DES, and only forward-secret ECDHE suites
+  # stay on. Written out, not left to defaults, so the service keeps them whatever its creation date.
+  apim_disabled_ciphers = [
+    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
+    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA", "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+    "TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_128_CBC_SHA256", "TLS_RSA_WITH_AES_128_GCM_SHA256",
+    "TLS_RSA_WITH_AES_256_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA256", "TLS_RSA_WITH_AES_256_GCM_SHA384",
+    "TripleDes168",
+  ]
+  apim_custom_properties = merge(
+    { for p in ["Ssl30", "Tls10", "Tls11"] : "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Protocols.${p}" => "false" },
+    { for p in ["Ssl30", "Tls10", "Tls11"] : "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Backend.Protocols.${p}" => "false" },
+    { for c in local.apim_disabled_ciphers : "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Ciphers.${c}" => "false" },
+    # Azure reports this one capitalised; matching it keeps plans clean.
+    { "Microsoft.WindowsAzure.ApiManagement.Gateway.Protocols.Server.Http2" = "False" },
+  )
+}
+
+resource "azapi_resource" "apim" {
   count = local.apim
 
-  # checkov:skip=CKV_AZURE_174:External mode on purpose: the runner is on the internet and every call needs an Entra token with the AI.Invoke role (ADR-0008).
-  name                          = "${var.prefix}-apim-aiservices-prd-ae"
-  resource_group_name           = local.rg
-  location                      = local.location
-  publisher_name                = "BinuForge lab"
-  publisher_email               = var.apim_publisher_email
-  sku_name                      = "Developer_1"
-  virtual_network_type          = "External"
-  public_ip_address_id          = azurerm_public_ip.apim[0].id
-  public_network_access_enabled = true
-  min_api_version               = "2021-08-01"
-  tags                          = local.tags
-
-  virtual_network_configuration {
-    subnet_id = azurerm_subnet.this["apim"].id
-  }
+  # External mode on purpose: the runner is on the internet and every call needs an Entra token with the
+  # AI.Invoke role (ADR-0008).
+  type      = "Microsoft.ApiManagement/service@2024-05-01"
+  name      = local.apim_name
+  parent_id = data.azurerm_resource_group.aiservices.id
+  location  = local.location
+  tags      = local.tags
 
   identity {
     type = "SystemAssigned"
   }
 
-  depends_on = [azurerm_network_security_rule.apim]
+  body = {
+    sku = {
+      name     = "Developer"
+      capacity = 1
+    }
+    properties = {
+      publisherName        = "BinuForge lab"
+      publisherEmail       = var.apim_publisher_email
+      virtualNetworkType   = "External"
+      publicIpAddressId    = azurerm_public_ip.apim[0].id
+      publicNetworkAccess  = "Enabled"
+      apiVersionConstraint = { minApiVersion = "2021-08-01" }
+      customProperties     = local.apim_custom_properties
+      virtualNetworkConfiguration = {
+        subnetResourceId = azurerm_subnet.this["apim"].id
+      }
+    }
+  }
+
+  response_export_values = ["properties.gatewayUrl"]
+
+  # Creating APIM in a virtual network takes 30 to 60 minutes.
+  timeouts {
+    create = "2h"
+    update = "2h"
+    delete = "1h"
+  }
+
+  depends_on = [azurerm_network_security_rule.apim, azapi_resource_action.apim_purge]
+}
+
+# A deleted APIM is kept for 48 hours with its name reserved, which blocks the next deploy. azurerm purged
+# it; with azapi, this action does, at destroy time only. The service depends on it, so the service is
+# destroyed first and the purge runs after (docs/runbooks/destroy.md). Needs bootstrap's purger role.
+resource "azapi_resource_action" "apim_purge" {
+  count = local.apim
+
+  type        = "Microsoft.ApiManagement/locations/deletedservices@2024-05-01"
+  resource_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/providers/Microsoft.ApiManagement/locations/${local.location}/deletedservices/${local.apim_name}"
+  method      = "DELETE"
+  when        = "destroy"
 }
 
 # The kill switch's value is changed by the runbook, in seconds, so Terraform deliberately leaves it alone.
@@ -93,7 +154,7 @@ resource "azurerm_api_management_named_value" "kill_switch" {
   name                = local.kill_switch_name
   display_name        = local.kill_switch_name
   resource_group_name = local.rg
-  api_management_name = azurerm_api_management.this[0].name
+  api_management_name = azapi_resource.apim[0].name
   value               = "false"
 
   lifecycle {
@@ -107,7 +168,7 @@ resource "azurerm_api_management_api" "openai" {
   name                  = "openai"
   display_name          = "Azure OpenAI through the AI gateway"
   resource_group_name   = local.rg
-  api_management_name   = azurerm_api_management.this[0].name
+  api_management_name   = azapi_resource.apim[0].name
   revision              = "1"
   path                  = "openai"
   protocols             = ["https"]
@@ -121,7 +182,7 @@ resource "azurerm_api_management_api_operation" "chat" {
 
   operation_id        = "chat-completions"
   api_name            = azurerm_api_management_api.openai[0].name
-  api_management_name = azurerm_api_management.this[0].name
+  api_management_name = azapi_resource.apim[0].name
   resource_group_name = local.rg
   display_name        = "Chat completions"
   method              = "POST"
@@ -139,7 +200,7 @@ resource "azurerm_api_management_api_policy" "openai" {
   count = local.apim
 
   api_name            = azurerm_api_management_api.openai[0].name
-  api_management_name = azurerm_api_management.this[0].name
+  api_management_name = azapi_resource.apim[0].name
   resource_group_name = local.rg
 
   xml_content = templatefile("${path.module}/policies/ai-gateway.xml.tftpl", {
@@ -166,7 +227,7 @@ resource "azurerm_role_assignment" "apim_openai_user" {
 
   scope                = azurerm_cognitive_account.this.id
   role_definition_name = "Cognitive Services OpenAI User"
-  principal_id         = one(azurerm_api_management.this[0].identity).principal_id
+  principal_id         = azapi_resource.apim[0].identity[0].principal_id
   principal_type       = "ServicePrincipal"
   description          = "AI gateway, ADR-0008. The only caller allowed on the model."
 }
@@ -178,8 +239,8 @@ resource "azurerm_api_management_diagnostic" "azuremonitor" {
 
   identifier               = "azuremonitor"
   resource_group_name      = local.rg
-  api_management_name      = azurerm_api_management.this[0].name
-  api_management_logger_id = "${azurerm_api_management.this[0].id}/loggers/azuremonitor"
+  api_management_name      = azapi_resource.apim[0].name
+  api_management_logger_id = "${azapi_resource.apim[0].id}/loggers/azuremonitor"
   sampling_percentage      = 100
   always_log_errors        = true
   log_client_ip            = false
@@ -208,7 +269,7 @@ resource "azurerm_monitor_diagnostic_setting" "apim_ops" {
   count = local.apim
 
   name                       = "${var.prefix}-diag-apim-ops"
-  target_resource_id         = azurerm_api_management.this[0].id
+  target_resource_id         = azapi_resource.apim[0].id
   log_analytics_workspace_id = local.management.log_analytics_workspace_id
 
   enabled_log {

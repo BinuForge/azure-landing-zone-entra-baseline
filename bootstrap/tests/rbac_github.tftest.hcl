@@ -115,6 +115,20 @@ run "log_linker_holds_only_the_linking_actions" {
   }
 }
 
+run "purger_can_only_purge_soft_deleted_services" {
+  command = plan
+
+  assert {
+    condition     = alltrue([for a in one(azurerm_role_definition.soft_delete_purger.permissions).actions : !strcontains(a, "*") && (strcontains(a, "/deletedservices/") || strcontains(a, "/deletedAccounts/"))])
+    error_message = "The purger may act on soft-deleted APIM services and AI accounts only."
+  }
+
+  assert {
+    condition     = keys(azurerm_role_assignment.soft_delete_purger) == ["azure-l3-apply"]
+    error_message = "Only level 3 creates services that need purging."
+  }
+}
+
 run "assignments_are_typed_as_service_principals" {
   command = plan
 

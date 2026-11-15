@@ -125,6 +125,36 @@ resource "azurerm_role_assignment" "log_linker" {
   description        = "Bootstrap, ADR-0012. Diagnostic settings to the ops workspace."
 }
 
+# Purging a soft-deleted APIM or AI account is a subscription-level action, outside level 3's resource
+# group. Without it a teardown leaves both names reserved and blocks the next deploy. This role holds those
+# actions and nothing else (docs/runbooks/destroy.md).
+resource "azurerm_role_definition" "soft_delete_purger" {
+  name        = "${var.prefix}-role-soft-delete-purger"
+  scope       = local.subscription_scope
+  description = "Read and purge soft-deleted APIM services and AI accounts. Created by bootstrap, ADR-0012."
+
+  permissions {
+    actions = [
+      "Microsoft.ApiManagement/locations/deletedservices/read",
+      "Microsoft.ApiManagement/locations/deletedservices/delete",
+      "Microsoft.CognitiveServices/locations/resourceGroups/deletedAccounts/read",
+      "Microsoft.CognitiveServices/locations/resourceGroups/deletedAccounts/delete",
+    ]
+  }
+
+  assignable_scopes = [local.subscription_scope]
+}
+
+resource "azurerm_role_assignment" "soft_delete_purger" {
+  for_each = toset(["azure-l3-apply"])
+
+  scope              = local.subscription_scope
+  principal_id       = azuread_service_principal.pipeline[each.key].object_id
+  principal_type     = "ServicePrincipal"
+  role_definition_id = azurerm_role_definition.soft_delete_purger.role_definition_resource_id
+  description        = "Bootstrap, ADR-0012. Purge soft-deleted APIM and AI accounts on teardown."
+}
+
 resource "azurerm_role_assignment" "pipeline" {
   for_each = local.role_assignments
 
