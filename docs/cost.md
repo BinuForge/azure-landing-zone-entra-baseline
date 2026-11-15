@@ -40,3 +40,4 @@ Warn before a phase would take the total past **400**.
 | `tfc/` | 3 | 34 (3 projects, 12 workspaces, 12 workspace settings, 1 variable set, 1 attachment, 5 variables) | 153 |
 | `azure/level-0-org` | 4 | 10 management groups | 163 |
 | `azure/level-1-governance` | 4 | 12 (2 custom definitions, 3 initiatives, 4 assignments, 3 exemptions) | 175 |
+| `azure/level-2-platform/management` | 4 | 1 Log Analytics workspace | 176 |

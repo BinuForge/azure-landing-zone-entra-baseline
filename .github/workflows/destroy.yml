@@ -15,6 +15,7 @@ on:
         type: choice
         options:
           - check
+          - azure-l2-management
       confirm:
         description: Type the target again to confirm.
         type: string
@@ -44,8 +45,35 @@ jobs:
   # Level destroy jobs go here, highest level first. Each one needs the job before it and runs when
   # `!failure() && !cancelled()`, so a skipped level does not stop the chain.
 
-  leftovers:
+  plan-destroy-l2-management:
     needs: confirm
+    if: ${{ !failure() && !cancelled() && inputs.target == 'azure-l2-management' }}
+    uses: ./.github/workflows/_plan.yml
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    with:
+      working_directory: azure/level-2-platform/management
+      environment: lab-azure-l2-plan
+      destroy: true
+    secrets: inherit
+
+  destroy-l2-management:
+    needs: plan-destroy-l2-management
+    if: ${{ !failure() && !cancelled() && needs.plan-destroy-l2-management.outputs.has_changes == 'true' }}
+    uses: ./.github/workflows/_apply.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      working_directory: azure/level-2-platform/management
+      environment: lab-azure-l2-apply
+      artifact: ${{ needs.plan-destroy-l2-management.outputs.artifact }}
+    secrets: inherit
+
+  leftovers:
+    needs: [confirm, destroy-l2-management]
     if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-24.04
     # Reader at the root management group, so it sees the whole subscription and changes nothing.
