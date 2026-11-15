@@ -93,29 +93,6 @@ resource "azurerm_role_definition" "spoke_network_join" {
   assignable_scopes = [local.rg.connectivity, local.rg.dns]
 }
 
-# Lets the evidence workflow prove policy denies by validating deployments (tests/policy). Validation runs
-# the policy engine and creates nothing; this role holds that one action and no other.
-resource "azurerm_role_definition" "deployment_validator" {
-  name        = "${var.prefix}-role-deployment-validator"
-  scope       = local.subscription_scope
-  description = "Validate deployments only, for policy tests. Created by bootstrap, ADR-0012."
-
-  permissions {
-    actions = ["Microsoft.Resources/deployments/validate/action"]
-  }
-
-  assignable_scopes = [local.subscription_scope]
-}
-
-# The evidence workflow signs in as the level 0 plan identity (Reader at the root).
-resource "azurerm_role_assignment" "evidence_validator" {
-  scope              = local.subscription_scope
-  principal_id       = azuread_service_principal.pipeline["azure-l0-plan"].object_id
-  principal_type     = "ServicePrincipal"
-  role_definition_id = azurerm_role_definition.deployment_validator.role_definition_resource_id
-  description        = "Bootstrap, ADR-0012. Policy tests in the evidence workflow."
-}
-
 resource "azurerm_role_assignment" "pipeline" {
   for_each = local.role_assignments
 
