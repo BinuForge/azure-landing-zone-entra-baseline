@@ -80,6 +80,15 @@ run "providers_cover_the_ai_landing_zone" {
   }
 }
 
+run "insights_is_registered_explicitly" {
+  command = plan
+
+  assert {
+    condition     = azurerm_resource_provider_registration.insights.name == "Microsoft.Insights"
+    error_message = "Microsoft.Insights must be registered explicitly: diagnostic settings depend on it."
+  }
+}
+
 run "unknown_region_is_rejected" {
   command = plan
 
