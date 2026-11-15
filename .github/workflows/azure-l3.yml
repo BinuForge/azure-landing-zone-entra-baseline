@@ -1,0 +1,56 @@
+name: azure-l3
+
+# Level 3: shared AI services landing zone (ADR-0007). A pull request plans with the read-only identity and comments the plan.
+# A merge to main plans again, waits for approval in lab-azure-l3-apply, then applies that saved plan.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - azure/level-3-aiservices/**
+      - .github/workflows/azure-l3.yml
+      - .github/workflows/_plan.yml
+      - .github/workflows/_apply.yml
+  push:
+    branches: [main]
+    paths:
+      - azure/level-3-aiservices/**
+      - .github/workflows/azure-l3.yml
+      - .github/workflows/_plan.yml
+      - .github/workflows/_apply.yml
+  workflow_dispatch:
+
+# Deny everything by default; each job grants only what its called workflow needs.
+permissions: {}
+
+# One run per level at a time, never cancelled part way through an apply.
+concurrency:
+  group: azure-l3
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    uses: ./.github/workflows/_plan.yml
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    with:
+      working_directory: azure/level-3-aiservices
+      environment: lab-azure-l3-plan
+      comment: ${{ github.event_name == 'pull_request' }}
+    # Brings secrets into scope so the called job's environment secrets resolve. The repository holds no
+    # repository-level secrets by design, so nothing else is passed.
+    secrets: inherit
+
+  apply:
+    needs: plan
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && needs.plan.outputs.has_changes == 'true'
+    uses: ./.github/workflows/_apply.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      working_directory: azure/level-3-aiservices
+      environment: lab-azure-l3-apply
+      artifact: ${{ needs.plan.outputs.artifact }}
+    secrets: inherit

@@ -15,7 +15,8 @@ Empty level resource groups stay too. They are free, and level identities are sc
 ## Run it
 
 1. GitHub, Actions, `destroy`, Run workflow.
-2. Choose the target, and type it again in the confirmation box.
+2. Choose the target, and type it again in the confirmation box. `all` tears down every cost-bearing
+   level, highest first.
 3. For each level, read the destroy plan in the run summary, then approve the apply environment.
 4. The leftovers check runs last and fails if anything is left.
 

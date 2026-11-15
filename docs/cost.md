@@ -43,3 +43,4 @@ Warn before a phase would take the total past **400**.
 | `azure/level-2-platform/management` | 4 | 1 Log Analytics workspace | 176 |
 | `azure/level-2-platform/connectivity` | 4 | 3 (hub VNet, 2 reserved subnets) | 179 |
 | `azure/level-2-platform/dns` | 4 | 6 (3 private DNS zones, 3 hub links) | 185 |
+| `azure/level-3-aiservices` | 5 | 20 (spoke VNet, 2 subnets, 2 NSGs, 2 NSG associations, 2 peerings, 3 zone links, account, project, private endpoint, guardrail, 1 model deployment, prompt workspace, 2 diagnostic settings) | 205 |
