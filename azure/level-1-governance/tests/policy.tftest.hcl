@@ -70,7 +70,7 @@ run "generally_available_ai_controls_deny" {
     condition = alltrue([
       for ref in concat(azurerm_management_group_policy_set_definition.ai_account.policy_definition_reference, azurerm_management_group_policy_set_definition.ai_deployments.policy_definition_reference) :
       jsondecode(ref.parameter_values).effect.value == "Deny"
-      if contains(["restrictNetworkAccess", "disableLocalAuth", "approvedModels", "modelEligibility"], ref.reference_id)
+      if contains(["restrictNetworkAccess", "disableLocalAuth", "allowedKinds", "approvedModels", "modelEligibility"], ref.reference_id)
     ])
     error_message = "Network, keyless, approved-model and eligibility controls must deny."
   }
@@ -126,13 +126,15 @@ run "only_aiservices_kind_is_allowed" {
   command = plan
 
   assert {
-    condition     = jsondecode(azurerm_management_group_policy_assignment.ai_kinds.parameters).allowedKinds.value == ["AIServices"]
+    condition = jsondecode(one([
+      for r in azurerm_management_group_policy_set_definition.ai_account.policy_definition_reference : r if r.reference_id == "allowedKinds"
+    ]).parameter_values).allowedKinds.value == ["AIServices"]
     error_message = "Only the AIServices kind may be created in landing zones."
   }
 
   assert {
-    condition     = azurerm_management_group_policy_assignment.ai_kinds.management_group_id == "/providers/Microsoft.Management/managementGroups/lab-mg-landingzones"
-    error_message = "The kind restriction must cover every landing zone."
+    condition     = azurerm_policy_definition.ai_allowed_kinds.policy_type == "Custom"
+    error_message = "The kind restriction must be a custom definition: the built-in is system-assignment only."
   }
 }
 
@@ -168,7 +170,6 @@ run "assignment_names_fit_the_management_group_limit" {
       azurerm_management_group_policy_assignment.baseline.name,
       azurerm_management_group_policy_assignment.ai_account.name,
       azurerm_management_group_policy_assignment.ai_deployments.name,
-      azurerm_management_group_policy_assignment.ai_kinds.name,
       azurerm_management_group_policy_assignment.corp_no_public_ip.name,
       azurerm_management_group_policy_assignment.mcsb.name,
     ] : length(n) <= 24])

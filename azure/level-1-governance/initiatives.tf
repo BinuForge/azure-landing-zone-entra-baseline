@@ -21,6 +21,15 @@ resource "azurerm_management_group_policy_set_definition" "ai_account" {
   }
 
   policy_definition_reference {
+    reference_id         = "allowedKinds"
+    policy_definition_id = azurerm_policy_definition.ai_allowed_kinds.id
+    parameter_values = jsonencode({
+      effect       = { value = "Deny" }
+      allowedKinds = { value = ["AIServices"] }
+    })
+  }
+
+  policy_definition_reference {
     reference_id         = "diagnosticLogs"
     policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/${local.builtin.ai_diagnostic_logs}"
     parameter_values     = jsonencode({ effect = { value = "AuditIfNotExists" } })
