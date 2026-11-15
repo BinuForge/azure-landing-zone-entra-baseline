@@ -64,6 +64,7 @@ resource "azurerm_storage_account" "reports" {
 }
 
 resource "azurerm_storage_container" "reports" {
+  # checkov:skip=CKV2_AZURE_21:Blob logs would go to the ops workspace, which is torn down with level 2. Bank target: storage logs to the SIEM.
   name                  = "reports"
   storage_account_id    = azurerm_storage_account.reports.id
   container_access_type = "private"
