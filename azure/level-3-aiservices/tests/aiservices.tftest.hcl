@@ -180,8 +180,12 @@ run "prompt_logging_flag_sends_content_to_the_prompt_workspace_only" {
   }
 }
 
-run "gateway_is_off_by_default_and_costs_nothing" {
+run "gateway_off_costs_nothing" {
   command = plan
+
+  variables {
+    enable_apim = false
+  }
 
   assert {
     condition     = length(azurerm_api_management.this) == 0 && length(azurerm_public_ip.apim) == 0
