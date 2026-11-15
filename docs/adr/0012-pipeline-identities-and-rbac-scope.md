@@ -79,6 +79,7 @@ Scope "root" is the tenant root management group. Resource group names follow `d
 | `lab-azure-l3-plan` | Reader | AI services, connectivity and DNS groups | Plans read the peering and zone links that level 3 owns in the hub's groups |
 | `lab-azure-l3-apply` | Contributor | AI services group | Foundry, APIM, prompt workspace |
 | `lab-azure-l3-apply` | Custom `lab-role-spoke-network-join`: peer with the hub and register private endpoint records | connectivity and DNS groups | Spoke joins the hub without owning it |
+| `lab-azure-l3-apply` | Custom `lab-role-log-linker`: `workspaces/read` and `workspaces/sharedKeys/action` only | management group (resource group) | Diagnostic settings to the ops workspace need it; local auth is off there, so the keys are unusable |
 | `lab-azure-l3-apply` | Role Based Access Control Administrator, condition: may assign only Cognitive Services OpenAI User and Log Analytics Reader, and only to service principals | AI services group | Give APIM's identity the model role (ADR-0008) |
 | `lab-azure-l4-plan` | Reader | subscription | HCP dynamic credentials, `run_phase:plan`. Plans read the runner's role assignments, which sit at several scopes |
 | `lab-azure-l4-apply` | Contributor | ops agent group | HCP dynamic credentials, `run_phase:apply` |

@@ -93,6 +93,35 @@ resource "azurerm_role_definition" "spoke_network_join" {
   assignable_scopes = [local.rg.connectivity, local.rg.dns]
 }
 
+# Linking a diagnostic setting to a Log Analytics workspace needs sharedKeys/action on the workspace, a
+# legacy authorisation check. The ops workspace has local authentication off, so the keys cannot send or
+# query data. Scoped to the management group (the resource group), which survives teardowns; an
+# assignment on the workspace itself would be deleted with it.
+resource "azurerm_role_definition" "log_linker" {
+  name        = "${var.prefix}-role-log-linker"
+  scope       = local.subscription_scope
+  description = "Send diagnostics to a Log Analytics workspace. Created by bootstrap, ADR-0012."
+
+  permissions {
+    actions = [
+      "Microsoft.OperationalInsights/workspaces/read",
+      "Microsoft.OperationalInsights/workspaces/sharedKeys/action",
+    ]
+  }
+
+  assignable_scopes = [local.rg.management]
+}
+
+resource "azurerm_role_assignment" "log_linker" {
+  for_each = toset(["azure-l3-apply"])
+
+  scope              = local.rg.management
+  principal_id       = azuread_service_principal.pipeline[each.key].object_id
+  principal_type     = "ServicePrincipal"
+  role_definition_id = azurerm_role_definition.log_linker.role_definition_resource_id
+  description        = "Bootstrap, ADR-0012. Diagnostic settings to the ops workspace."
+}
+
 resource "azurerm_role_assignment" "pipeline" {
   for_each = local.role_assignments
 
