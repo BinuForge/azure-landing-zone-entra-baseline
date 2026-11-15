@@ -84,7 +84,7 @@ Scope "root" is the tenant root management group. Resource group names follow `d
 | `lab-azure-l4-plan` | Reader | subscription | HCP dynamic credentials, `run_phase:plan`. Plans read the runner's role assignments, which sit at several scopes |
 | `lab-azure-l4-apply` | Contributor | ops agent group | HCP dynamic credentials, `run_phase:apply` |
 | `lab-azure-l4-apply` | Role Based Access Control Administrator, condition: may assign only Reader, Cost Management Reader and Log Analytics Reader, and only to service principals | subscription | Give the runner identity its read roles |
-| `lab-azure-l4-opsagent-run` | None from bootstrap; read roles come from level 4 | | The ops agent's runner (threat model C-06) |
+| `lab-azure-l4-opsagent-run` | Custom `lab-role-report-writer`: blob write and add only, no read, list or delete | report store container | The ops agent's runner adds reports (ADR-0015). Its read roles come from level 4 (threat model C-06) |
 
 Moving a subscription needs `roleAssignments/write` and `delete` on it, which in practice means Owner
 ([move management groups and subscriptions](https://learn.microsoft.com/en-us/azure/governance/management-groups/manage)).

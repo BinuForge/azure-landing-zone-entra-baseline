@@ -1,6 +1,12 @@
 # Authenticates with the maintainer's `az login`. Bootstrap is never run from CI (ADR-0012).
 provider "azurerm" {
-  features {}
+  features {
+    # The report store has shared keys off, so Terraform manages it through Azure Resource Manager only,
+    # never through the storage data plane.
+    storage {
+      data_plane_available = false
+    }
+  }
 
   subscription_id = var.subscription_id
 
