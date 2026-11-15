@@ -7,10 +7,18 @@ locals {
     }
   }
 
+  # Level 4 runs in HCP Terraform with dynamic credentials (ADR-0012). Its environments only start those
+  # runs, so they carry the HCP token (set-pipeline-secrets.sh) and no Azure identity at all.
+  hcp_environments = {
+    for phase in ["plan", "apply"] : "${var.prefix}-azure-${local.workload_level}-${phase}" => { phase = phase }
+  }
+
+  environments = merge(local.github_environments, local.hcp_environments)
+
   # Plan environments accept any branch in this repository, so pull requests can plan. Apply and run
   # environments accept main only. Forks never receive environment secrets.
-  main_only_environments = { for name, e in local.github_environments : name => e if e.phase != "plan" }
-  reviewed_environments  = { for name, e in local.github_environments : name => e if e.phase == "apply" }
+  main_only_environments = { for name, e in local.environments : name => e if e.phase != "plan" }
+  reviewed_environments  = { for name, e in local.environments : name => e if e.phase == "apply" }
 }
 
 data "github_user" "apply_reviewer" {
@@ -18,7 +26,7 @@ data "github_user" "apply_reviewer" {
 }
 
 resource "github_repository_environment" "this" {
-  for_each = local.github_environments
+  for_each = local.environments
 
   repository          = var.github_repository
   environment         = each.key
@@ -60,7 +68,7 @@ resource "github_actions_environment_variable" "client_id" {
 }
 
 resource "github_actions_environment_variable" "tf_cloud_organization" {
-  for_each = local.github_environments
+  for_each = local.environments
 
   repository    = var.github_repository
   environment   = github_repository_environment.this[each.key].environment

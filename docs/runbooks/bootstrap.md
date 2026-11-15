@@ -14,7 +14,8 @@ Never run it from CI, never `terraform destroy` it, and never add a resource tha
 | `resource_groups.tf` | Resource provider registrations, one resource group per level component, a delete lock on the bootstrap group |
 | `identities.tf` | Plan and apply app registrations per level, the ops agent runner, and their federated credentials |
 | `rbac.tf` | Role assignments from ADR-0012, the custom spoke join role, delegation conditions |
-| `github.tf` | One GitHub environment per GitHub-federated identity, with branch rules, reviewers, variables and identifier secrets |
+| `report_store.tf` | The ops agent's report store, its write-only role for the runner, and read access for the maintainer (ADR-0015) |
+| `github.tf` | One GitHub environment per GitHub-federated identity, with branch rules, reviewers, variables and identifier secrets, plus level 4 plan and apply environments that hold only the HCP token |
 | `scripts/set-pipeline-secrets.sh` | The HCP token and plan encryption keys, set outside Terraform |
 
 ## Prerequisites
@@ -91,7 +92,8 @@ workspace, `lab-tfc-l0-core-prd`, is created by its first `terraform init`, like
 
 1. Copy `tfc/env/example.auto.tfvars` to `tfc/env/lab.auto.tfvars` and fill in. The level 4 client IDs
    come from `terraform output identity_client_ids` in `bootstrap/` (keys `azure-l4-plan` and
-   `azure-l4-apply`); tenant and subscription from `az account show --query "{tenant:tenantId, sub:id}"`.
+   `azure-l4-apply`), the runner's object ID from `terraform output opsagent_runner_object_id`; tenant
+   and subscription from `az account show --query "{tenant:tenantId, sub:id}"`.
 2. From `tfc/`: `terraform init`, then set `lab-tfc-l0-core-prd` to Local execution in HCP, as for
    bootstrap.
 3. `terraform plan -var-file=env/lab.auto.tfvars -out=tfplan`, read it, then `terraform apply tfplan`.

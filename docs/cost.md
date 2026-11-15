@@ -37,11 +37,11 @@ Warn before a phase would take the total past **400**.
 
 | Root | Phase | Resources | Running total |
 |---|---|---|---|
-| `bootstrap/` | 3 | 124 (budget, 7 resource groups, lock, 12 apps, 12 service principals, 1 app role assignment, 11 federated credentials, 3 custom roles, 24 role assignments, subscription placement, hierarchy settings, 9 environments, 5 branch policies, 18 variables, 18 secrets) | 124 |
-| `tfc/` | 3 | 34 (3 projects, 12 workspaces, 12 workspace settings, 1 variable set, 1 attachment, 5 variables) | 158 |
-| `azure/level-0-org` | 4 | 10 management groups | 168 |
-| `azure/level-1-governance` | 4 | 13 (2 custom definitions, 3 initiatives, 4 assignments, 4 exemptions) | 181 |
-| `azure/level-2-platform/management` | 4 | 1 Log Analytics workspace | 182 |
-| `azure/level-2-platform/connectivity` | 4 | 3 (hub VNet, 2 reserved subnets) | 185 |
-| `azure/level-2-platform/dns` | 4 | 6 (3 private DNS zones, 3 hub links) | 191 |
-| `azure/level-3-aiservices` | 5 | 39 (spoke VNet, 2 subnets, 2 NSGs, 2 NSG associations, 2 peerings, 3 zone links, account, project, private endpoint, guardrail, 1 model deployment, prompt workspace, 2 diagnostic settings, 11 APIM NSG rules, and 8 APIM resources while enable_apim is on) | 230 |
+| `bootstrap/` | 3 | 134 (budget, 7 resource groups, lock, 12 apps, 12 service principals, 1 app role assignment, 11 federated credentials, 4 custom roles, 26 role assignments, subscription placement, hierarchy settings, report store account and container, 11 environments, 6 branch policies, 20 variables, 18 secrets) | 134 |
+| `tfc/` | 3 | 37 (3 projects, 12 workspaces, 12 workspace settings, 2 variable sets, 2 attachments, 6 variables) | 171 |
+| `azure/level-0-org` | 4 | 10 management groups | 181 |
+| `azure/level-1-governance` | 4 | 13 (2 custom definitions, 3 initiatives, 4 assignments, 4 exemptions) | 194 |
+| `azure/level-2-platform/management` | 4 | 1 Log Analytics workspace | 195 |
+| `azure/level-2-platform/connectivity` | 4 | 3 (hub VNet, 2 reserved subnets) | 198 |
+| `azure/level-2-platform/dns` | 4 | 6 (3 private DNS zones, 3 hub links) | 204 |
+| `azure/level-3-aiservices` | 5 | 39 (spoke VNet, 2 subnets, 2 NSGs, 2 NSG associations, 2 peerings, 3 zone links, account, project, private endpoint, guardrail, 1 model deployment, prompt workspace, 2 diagnostic settings, 11 APIM NSG rules, and 8 APIM resources while enable_apim is on) | 243 |

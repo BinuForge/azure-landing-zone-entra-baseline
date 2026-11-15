@@ -26,3 +26,17 @@ output "federated_subjects" {
     { for k, c in local.hcp_credentials : k => c.subject },
   )
 }
+
+# An identifier, not a secret. Level 4 grants the runner its read roles (threat model C-06).
+output "opsagent_runner_object_id" {
+  description = "Object ID of lab-azure-l4-opsagent-run. Set as opsagent_runner_object_id in tfc/env/<tenant>.auto.tfvars."
+  value       = azuread_service_principal.pipeline["azure-l4-opsagent-run"].object_id
+}
+
+output "report_store" {
+  description = "Storage account and container of the ops agent's report store (ADR-0015)."
+  value = {
+    account   = azurerm_storage_account.reports.name
+    container = azurerm_storage_container.reports.name
+  }
+}

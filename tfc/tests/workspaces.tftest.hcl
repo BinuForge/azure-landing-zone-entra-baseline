@@ -15,6 +15,8 @@ variables {
     l4_apply_client_id = "00000000-0000-0000-0000-00000000000b"
     tenant_id          = "00000000-0000-0000-0000-00000000000c"
     subscription_id    = "00000000-0000-0000-0000-00000000000d"
+    # Not a credential; the same placeholder style keeps the fixture readable.
+    opsagent_runner_object_id = "00000000-0000-0000-0000-00000000000e"
   }
 }
 

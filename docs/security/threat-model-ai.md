@@ -132,7 +132,7 @@ most, from people who can write tags, names, log lines or plans into data the mo
 | C-09 | Only the APIM managed identity holds a data-plane role on Foundry | Terraform, level 3 |
 | C-10 | The runner identity's federated credential trusts only this repository's `main` branch through its environment | Bootstrap |
 | C-11 | Identifiers are replaced with stable tokens before the model sees them, and output is scanned for GUIDs, IP ranges and domains before it is stored or posted | Runner |
-| C-12 | Full reports go to a private blob container in a storage account created by bootstrap, so it survives teardowns. Shared key access and anonymous access are off; the runner can only write to that container, and only the maintainer can read it. Only redacted summaries can appear on the public repo | Bootstrap, runner |
+| C-12 | Full reports go to a private blob container in a storage account created by bootstrap, so it survives teardowns. Shared key access and anonymous access are off; the runner can only write to that container, and only the maintainer can read it (ADR-0015). Only redacted summaries can appear on the public repo | Bootstrap, runner |
 | C-13 | Output is sanitised: no images, no HTML, links only to an allowlist (Microsoft Learn, this repo) | Runner |
 | C-14 | Workflows that use cloud identities never run for pull requests from forks; actions pinned by SHA | Workflows, ADR-0001 |
 | C-15 | Request and response logging is off by default and, when on, goes to a separate workspace | Terraform, level 3 |

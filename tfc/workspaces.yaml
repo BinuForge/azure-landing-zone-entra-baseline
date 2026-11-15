@@ -145,3 +145,12 @@ variable_sets:
       ARM_SUBSCRIPTION_ID:
         category: env
         input: subscription_id
+
+  azure-opsagent-inputs:
+    description: Level 4 inputs that are identifiers, not credentials.
+    workspaces: [azure-l4-opsagent-np]
+    variables:
+      runner_object_id:
+        category: terraform
+        input: opsagent_runner_object_id
+        description: Object ID of lab-azure-l4-opsagent-run (bootstrap output). Level 4 grants it read roles.

@@ -133,8 +133,8 @@ run "apply_environments_need_review_and_main" {
   command = plan
 
   assert {
-    condition     = length(github_repository_environment.this) == 9
-    error_message = "Expected one environment per GitHub-federated identity."
+    condition     = length(github_repository_environment.this) == 11
+    error_message = "Expected one environment per GitHub-federated identity, plus level 4 plan and apply."
   }
 
   assert {
@@ -158,11 +158,19 @@ run "apply_environments_need_review_and_main" {
   }
 }
 
-run "no_github_environment_for_hcp_level_4" {
+run "level_4_environments_hold_no_azure_identity" {
   command = plan
 
   assert {
-    condition     = !contains(keys(github_repository_environment.this), "lab-azure-l4-apply")
-    error_message = "Level 4 authenticates through HCP Terraform, so it has no GitHub environment."
+    condition     = contains(keys(github_repository_environment.this), "lab-azure-l4-apply") && length(github_repository_environment.this["lab-azure-l4-apply"].reviewers) == 1
+    error_message = "Level 4 applies start from a reviewed GitHub environment."
+  }
+
+  assert {
+    condition = alltrue([
+      for name in ["lab-azure-l4-plan", "lab-azure-l4-apply"] :
+      !contains(keys(github_actions_environment_variable.client_id), name) && !contains(keys(github_actions_environment_secret.tenant_id), name)
+    ])
+    error_message = "Level 4 authenticates to Azure through HCP Terraform, so its GitHub environments hold no Azure identity."
   }
 }
