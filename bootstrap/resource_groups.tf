@@ -7,7 +7,7 @@ locals {
     "Microsoft.CognitiveServices",
     "Microsoft.Consumption",
     "Microsoft.CostManagement",
-    "Microsoft.Insights",
+    "microsoft.insights", # Azure's namespace is lowercase; "Microsoft.Insights" silently registers nothing
     "Microsoft.Management",
     "Microsoft.ManagedIdentity",
     "Microsoft.Network",
@@ -39,13 +39,6 @@ locals {
     # and the leftovers check reports what is in it without failing.
     study = { env = "np", workspace = "study" }
   }
-}
-
-# The provider-level list above left Microsoft.Insights unregistered (checked with `az provider show` on
-# 2026-11-15, after several bootstrap runs), which blocked every diagnostic setting. Managed explicitly,
-# so it is in state and in the plan.
-resource "azurerm_resource_provider_registration" "insights" {
-  name = "Microsoft.Insights"
 }
 
 resource "azurerm_resource_group" "this" {

@@ -80,12 +80,12 @@ run "providers_cover_the_ai_landing_zone" {
   }
 }
 
-run "insights_is_registered_explicitly" {
+run "insights_uses_azures_lowercase_namespace" {
   command = plan
 
   assert {
-    condition     = azurerm_resource_provider_registration.insights.name == "Microsoft.Insights"
-    error_message = "Microsoft.Insights must be registered explicitly: diagnostic settings depend on it."
+    condition     = contains(output.resource_providers, "microsoft.insights") && !contains(output.resource_providers, "Microsoft.Insights")
+    error_message = "Azure's Insights namespace is lowercase. With capitals it silently registers nothing, and every diagnostic setting fails."
   }
 }
 
