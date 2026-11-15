@@ -1,0 +1,168 @@
+name: gateway-tests
+
+# Tests the AI gateway's controls on the live deployment (docs/security/threat-model-ai.md). Each job runs
+# as the identity whose access it tests, so a result shows what that identity can really do:
+#
+#   identity     lab-azure-l0-plan          Reader everywhere, no AI.Invoke: who holds which role
+#   caller       lab-azure-l4-opsagent-run  the only AI.Invoke holder, with no Azure role: calls the gateway
+#   kill-switch  lab-azure-l3-apply         owns the gateway, so it waits for approval: the kill switch
+#
+# Results are redacted, scanned and attested like an evidence pack (ADR-0011); a person brings them in
+# with pull-evidence.sh. Needs enable_apim = true in level 3.
+# checkov:skip=CKV_GHA_7:Not a build. The only input names the evidence folder and is validated before use.
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: Folder name, for example 2026-11-15-gateway (lowercase letters, digits and hyphens).
+        type: string
+        required: true
+
+permissions: {}
+
+# Never alongside another run: the token limit and the kill switch would interfere.
+concurrency:
+  group: gateway-tests
+  cancel-in-progress: false
+
+jobs:
+  label:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Validate label
+        env:
+          LABEL: ${{ inputs.label }}
+        run: |
+          if ! [[ "$LABEL" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+$ ]]; then
+            echo "Label must look like 2026-11-15-gateway." >&2
+            exit 1
+          fi
+
+  identity:
+    needs: label
+    runs-on: ubuntu-24.04
+    environment: lab-azure-l0-plan
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      results: ${{ steps.results.outputs.results }}
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Sign in with OIDC
+        run: bash .github/scripts/az-login-oidc.sh
+      - name: Test
+        run: bash tests/gateway/identity.sh "$RUNNER_TEMP/results.json"
+      - name: Results
+        id: results
+        if: ${{ !cancelled() }}
+        run: echo "results=$(jq -c . "$RUNNER_TEMP/results.json" || echo null)" >> "$GITHUB_OUTPUT"
+
+  caller:
+    needs: [label, identity]
+    if: ${{ !cancelled() && needs.label.result == 'success' }}
+    runs-on: ubuntu-24.04
+    environment: lab-azure-l4-opsagent-run
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      results: ${{ steps.results.outputs.results }}
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      # No subscription: the runner holds no Azure role, only AI.Invoke on the gateway.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Sign in with OIDC
+        run: bash .github/scripts/az-login-oidc.sh
+      - name: Test
+        run: bash tests/gateway/caller.sh "$RUNNER_TEMP/results.json"
+      - name: Results
+        id: results
+        if: ${{ !cancelled() }}
+        run: echo "results=$(jq -c . "$RUNNER_TEMP/results.json" || echo null)" >> "$GITHUB_OUTPUT"
+
+  kill-switch:
+    needs: [label, caller]
+    if: ${{ !cancelled() && needs.label.result == 'success' }}
+    runs-on: ubuntu-24.04
+    environment: lab-azure-l3-apply
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      results: ${{ steps.results.outputs.results }}
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Sign in with OIDC
+        run: bash .github/scripts/az-login-oidc.sh
+      - name: Test
+        run: bash tests/gateway/kill-switch.sh "$RUNNER_TEMP/results.json"
+      - name: Results
+        id: results
+        if: ${{ !cancelled() }}
+        run: echo "results=$(jq -c . "$RUNNER_TEMP/results.json" || echo null)" >> "$GITHUB_OUTPUT"
+
+  report:
+    needs: [label, identity, caller, kill-switch]
+    if: ${{ !cancelled() && needs.label.result == 'success' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write # signing certificate for the attestation
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Combine
+        env:
+          IDENTITY: ${{ needs.identity.outputs.results }}
+          CALLER: ${{ needs.caller.outputs.results }}
+          KILL_SWITCH: ${{ needs.kill-switch.outputs.results }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/evidence"
+          jq -n --argjson i "${IDENTITY:-null}" --argjson c "${CALLER:-null}" --argjson k "${KILL_SWITCH:-null}" '
+            [$i, $c, $k] | map(select(. != null)) as $jobs
+            | ([$jobs[].cases[]]) as $cases
+            | {jobs_reported: ($jobs | length), total: ($cases | length),
+               passed: ([$cases[] | select(.pass)] | length), cases: $cases}' \
+            > "$RUNNER_TEMP/evidence/gateway-tests.json"
+          jq -r '.cases[] | "\(.id) \(if .pass then "PASS" else "FAIL" end) \(.what)"' "$RUNNER_TEMP/evidence/gateway-tests.json"
+
+      # Nothing is attested unless the scan is clean (threat model T-08).
+      - name: Redact and scan
+        run: python3 -I .github/scripts/redact-evidence.py "$RUNNER_TEMP/evidence"
+
+      - name: Attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ runner.temp }}/evidence/*
+
+      - name: Upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: evidence-${{ inputs.label }}
+          path: ${{ runner.temp }}/evidence/
+          retention-days: 90
+          if-no-files-found: error
+
+      # Kept and signed either way; a missing job or a failed case then fails the run so it is seen.
+      - name: All gateway tests passed
+        run: jq -e '.jobs_reported == 3 and .passed == .total' "$RUNNER_TEMP/evidence/gateway-tests.json"
