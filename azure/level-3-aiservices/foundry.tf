@@ -2,6 +2,7 @@
 # endpoint, with an Entra token that holds a data-plane role (ADR-0008). Level 1 policy denies both,
 # so this is enforced twice.
 resource "azurerm_cognitive_account" "this" {
+  # checkov:skip=CKV2_AZURE_22:Microsoft-managed keys by data classification: lab metadata only (ADR-0014).
   name                          = "${var.prefix}-ais-aiservices-prd-ae"
   resource_group_name           = local.rg
   location                      = local.location
