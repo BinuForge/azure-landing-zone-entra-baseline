@@ -1,0 +1,48 @@
+<!-- AI gateway policy (ADR-0008). Order matters: kill switch, then caller identity, then the caller's
+     limit, then APIM's own identity for the backend. The caller's token never reaches Foundry. -->
+<policies>
+  <inbound>
+    <base />
+    <!-- Kill switch (threat model C-20): flipped by docs/runbooks/ai-gateway.md in seconds. -->
+    <choose>
+      <when condition="@(&quot;{{${kill_switch}}}&quot; == &quot;true&quot;)">
+        <return-response>
+          <set-status code="503" reason="AI gateway disabled" />
+        </return-response>
+      </when>
+    </choose>
+    <!-- Only Entra tokens for the gateway that carry the AI.Invoke role (C-09, C-10). -->
+    <validate-jwt header-name="Authorization" failed-validation-httpcode="401" failed-validation-error-message="Unauthorized" require-scheme="Bearer">
+      <openid-config url="https://login.microsoftonline.com/${tenant_id}/.well-known/openid-configuration" />
+      <audiences>
+        <audience>${audience}</audience>
+      </audiences>
+      <issuers>
+        <issuer>https://sts.windows.net/${tenant_id}/</issuer>
+      </issuers>
+      <required-claims>
+        <claim name="roles" match="any">
+          <value>AI.Invoke</value>
+        </claim>
+      </required-claims>
+    </validate-jwt>
+    <!-- Per-caller token limit (C-18), keyed on the calling application. -->
+    <llm-token-limit counter-key="@(context.Request.Headers.GetValueOrDefault(&quot;Authorization&quot;,&quot;&quot;).AsJwt()?.Claims.GetValueOrDefault(&quot;appid&quot;, &quot;unknown&quot;))" tokens-per-minute="${tokens_per_minute}" estimate-prompt-tokens="false" remaining-tokens-header-name="x-ratelimit-remaining-tokens" />
+    <!-- One correlation ID from caller to model logs (C-22). -->
+    <set-header name="x-ms-client-request-id" exists-action="override">
+      <value>@(context.Request.Headers.GetValueOrDefault("x-correlation-id", context.RequestId.ToString()))</value>
+    </set-header>
+    <!-- Swap the caller's token for APIM's managed identity: only APIM holds a role on Foundry. -->
+    <set-header name="Authorization" exists-action="delete" />
+    <authentication-managed-identity resource="https://cognitiveservices.azure.com" />
+  </inbound>
+  <backend>
+    <base />
+  </backend>
+  <outbound>
+    <base />
+  </outbound>
+  <on-error>
+    <base />
+  </on-error>
+</policies>

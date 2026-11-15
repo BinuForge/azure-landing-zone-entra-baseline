@@ -37,6 +37,29 @@ variable "model_deployments" {
   }
 }
 
+variable "enable_apim" {
+  description = "Deploy the APIM AI gateway. Costs about USD 1.80 a day while on and takes 30-60 minutes to deploy (docs/cost.md). Turning it on or off is a pull request."
+  type        = bool
+  default     = false
+}
+
+variable "apim_publisher_email" {
+  description = "Publisher contact APIM requires. No mailbox needs to exist behind it."
+  type        = string
+  default     = "noreply@binuforge.com"
+}
+
+variable "gateway_tokens_per_minute" {
+  description = "Token limit per caller at the gateway (threat model C-18)."
+  type        = number
+  default     = 2000
+
+  validation {
+    condition     = var.gateway_tokens_per_minute >= 100 && var.gateway_tokens_per_minute <= 10000
+    error_message = "gateway_tokens_per_minute must be between 100 and 10000 for the lab."
+  }
+}
+
 variable "enable_prompt_logging" {
   description = "Send full request and response content to the prompt workspace. Off by default: turn on only for a test or an investigation (ADR-0010)."
   type        = bool
