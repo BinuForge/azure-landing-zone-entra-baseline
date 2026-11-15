@@ -75,6 +75,15 @@ run "every_role_assignment_admin_is_constrained" {
     condition     = strcontains(azurerm_role_assignment.pipeline["azure-l3-apply/rbac-admin/aiservices"].condition, "'ServicePrincipal'")
     error_message = "Delegated role assignment must be limited to service principals."
   }
+
+  # On the management group, level 3 may grant Log Analytics Reader only: never the model role.
+  assert {
+    condition = (
+      strcontains(azurerm_role_assignment.pipeline["azure-l3-apply/rbac-admin/management"].condition, "73c42c96-874c-492b-b04d-ab87d138a893")
+      && !strcontains(azurerm_role_assignment.pipeline["azure-l3-apply/rbac-admin/management"].condition, "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd")
+    )
+    error_message = "Level 3's management delegation must allow Log Analytics Reader and nothing else."
+  }
 }
 
 run "only_levels_0_and_1_reach_the_root" {
@@ -103,6 +112,20 @@ run "log_linker_holds_only_the_linking_actions" {
   assert {
     condition     = keys(azurerm_role_assignment.log_linker) == ["azure-l3-apply"]
     error_message = "Only levels that send diagnostics to the ops workspace get the log linker role."
+  }
+}
+
+run "purger_can_only_purge_soft_deleted_services" {
+  command = plan
+
+  assert {
+    condition     = alltrue([for a in one(azurerm_role_definition.soft_delete_purger.permissions).actions : !strcontains(a, "*") && (strcontains(a, "/deletedservices/") || strcontains(a, "/deletedAccounts/"))])
+    error_message = "The purger may act on soft-deleted APIM services and AI accounts only."
+  }
+
+  assert {
+    condition     = keys(azurerm_role_assignment.soft_delete_purger) == ["azure-l3-apply"]
+    error_message = "Only level 3 creates services that need purging."
   }
 }
 

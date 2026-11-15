@@ -28,8 +28,12 @@
 Add `Azure/azapi` (`~> 2.13`) and `integrations/github` (`~> 6.13`), pinned and locked as ADR-0001
 describes.
 
-- azurerm comes first. azapi is used only where azurerm has no support, and each azapi resource carries
-  a comment naming the missing feature and the API version it calls.
+- azurerm comes first. azapi is used only where azurerm has no support, or where azurerm's
+  implementation needs more privilege than the job. Each azapi resource carries a comment naming the
+  reason and the API version it calls.
+- Example of the second case: azurerm reads an APIM service by listing its delegation and tenant access
+  secrets, so a read-only plan identity cannot plan it and the secrets land in state. Level 3 manages the
+  service with azapi, which reads with a plain GET (2026-11-15).
 - The GitHub provider is used only in `bootstrap/`, run from a person's machine, never from CI.
 
 The providers were chosen over scripts and portal steps because the lab's evidence depends on being

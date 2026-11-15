@@ -37,7 +37,7 @@ output "prompt_workspace_id" {
 
 output "gateway_url" {
   description = "AI gateway base URL for the OpenAI API, or null while APIM is off. Callers need an Entra token for gateway_audience with the AI.Invoke role."
-  value       = var.enable_apim ? "${azurerm_api_management.this[0].gateway_url}/openai" : null
+  value       = var.enable_apim ? "${azapi_resource.apim[0].output.properties.gatewayUrl}/openai" : null
 }
 
 output "gateway_audience" {

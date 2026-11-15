@@ -4,13 +4,22 @@ mock_provider "azurerm" {
 
   mock_data "azurerm_resource_group" {
     defaults = {
+      id       = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/lab-rg-aiservices-prd-ae"
       name     = "lab-rg-aiservices-prd-ae"
       location = "australiaeast"
+    }
+  }
+
+  mock_resource "azurerm_log_analytics_workspace" {
+    defaults = {
+      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/lab-rg-aiservices-prd-ae/providers/Microsoft.OperationalInsights/workspaces/lab-log-prompts-prd-ae"
     }
   }
 }
 
 mock_provider "tfe" {}
+
+mock_provider "azapi" {}
 
 override_data {
   target = data.azurerm_client_config.current
@@ -188,7 +197,7 @@ run "gateway_off_costs_nothing" {
   }
 
   assert {
-    condition     = length(azurerm_api_management.this) == 0 && length(azurerm_public_ip.apim) == 0
+    condition     = length(azapi_resource.apim) == 0 && length(azurerm_public_ip.apim) == 0
     error_message = "APIM and its public IP must not exist unless enable_apim is true."
   }
 }
@@ -201,7 +210,7 @@ run "gateway_when_on_is_external_with_identity_and_one_role" {
   }
 
   assert {
-    condition     = azurerm_api_management.this[0].sku_name == "Developer_1" && azurerm_api_management.this[0].virtual_network_type == "External"
+    condition     = azapi_resource.apim[0].body.sku.name == "Developer" && azapi_resource.apim[0].body.properties.virtualNetworkType == "External"
     error_message = "The gateway is APIM Developer in external VNet mode (ADR-0008)."
   }
 
@@ -235,7 +244,7 @@ run "gateway_policy_enforces_identity_limit_kill_switch_and_identity_swap" {
       "<value>AI.Invoke</value>",
       "{{ai-kill-switch}}",
       "<llm-token-limit",
-      "tokens-per-minute=\"2000\"",
+      "tokens-per-minute=\"8000\"",
       "<set-header name=\"Authorization\" exists-action=\"delete\" />",
       "<authentication-managed-identity resource=\"https://cognitiveservices.azure.com\" />",
     ] : strcontains(azurerm_api_management_api_policy.openai[0].xml_content, fragment)])
@@ -254,5 +263,89 @@ run "apim_subnet_denies_other_internet_egress" {
   assert {
     condition     = alltrue([for r in azurerm_network_security_rule.apim : r.destination_port_ranges == null || !contains(r.destination_port_ranges, "*")])
     error_message = "Azure rejects '*' inside a list of port ranges; any-port rules must use destination_port_range."
+  }
+}
+
+run "prompt_queries_raise_an_alert_from_the_ops_workspace" {
+  command = plan
+
+  assert {
+    condition     = tolist(azurerm_monitor_scheduled_query_rules_alert_v2.prompts_queried.scopes) == tolist(["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/lab-rg-management-prd-ae/providers/Microsoft.OperationalInsights/workspaces/lab-log-management-prd-ae"])
+    error_message = "The alert must read the ops workspace, where the query audit lands, never the prompt workspace."
+  }
+
+  assert {
+    condition     = strcontains(one(azurerm_monitor_scheduled_query_rules_alert_v2.prompts_queried.criteria).query, "LAQueryLogs") && strcontains(one(azurerm_monitor_scheduled_query_rules_alert_v2.prompts_queried.criteria).query, "lab-log-prompts-prd-ae") && azurerm_monitor_scheduled_query_rules_alert_v2.prompts_queried.severity == 1
+    error_message = "Every query against the prompt workspace must raise a severity 1 alert."
+  }
+
+  assert {
+    condition     = azurerm_role_assignment.prompts_queried_reads_ops.role_definition_name == "Log Analytics Reader"
+    error_message = "The alert's identity reads the ops workspace only."
+  }
+}
+
+run "gateway_logs_the_run_id_but_never_a_body" {
+  command = plan
+
+  variables {
+    enable_apim = true
+  }
+
+  assert {
+    condition     = contains(one(azurerm_api_management_diagnostic.azuremonitor[0].frontend_request).headers_to_log, "x-correlation-id")
+    error_message = "Gateway logs must record the caller's run ID (C-22)."
+  }
+
+  assert {
+    condition = alltrue([for b in [
+      azurerm_api_management_diagnostic.azuremonitor[0].frontend_request,
+      azurerm_api_management_diagnostic.azuremonitor[0].frontend_response,
+      azurerm_api_management_diagnostic.azuremonitor[0].backend_request,
+      azurerm_api_management_diagnostic.azuremonitor[0].backend_response,
+    ] : one(b).body_bytes == 0])
+    error_message = "Gateway logs must never hold prompt or response content (ADR-0010)."
+  }
+}
+
+run "one_caller_cannot_take_a_whole_deployment" {
+  command = plan
+
+  variables {
+    enable_apim               = true
+    gateway_tokens_per_minute = 10000
+  }
+
+  expect_failures = [azurerm_api_management_api_policy.openai]
+}
+
+run "gateway_refuses_old_tls_and_weak_ciphers" {
+  command = plan
+
+  variables {
+    enable_apim = true
+  }
+
+  assert {
+    condition = alltrue([for k in [
+      "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Protocols.Tls10",
+      "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Protocols.Tls11",
+      "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Backend.Protocols.Tls10",
+      "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Ciphers.TripleDes168",
+    ] : azapi_resource.apim[0].body.properties.customProperties[k] == "false"])
+    error_message = "The gateway must refuse TLS 1.0 and 1.1, to callers and backends, and 3DES."
+  }
+}
+
+run "deleted_gateway_is_purged_on_destroy_only" {
+  command = plan
+
+  variables {
+    enable_apim = true
+  }
+
+  assert {
+    condition     = azapi_resource_action.apim_purge[0].when == "destroy" && azapi_resource_action.apim_purge[0].method == "DELETE"
+    error_message = "The purge must run at destroy time only, so a teardown leaves no reserved name."
   }
 }

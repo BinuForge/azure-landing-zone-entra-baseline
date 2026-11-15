@@ -10,16 +10,14 @@ provider "azurerm" {
     log_analytics_workspace {
       permanently_delete_on_destroy = true
     }
-    # A deleted APIM is kept for 48 hours with its name reserved.
-    api_management {
-      purge_soft_delete_on_destroy = true
-      recover_soft_deleted         = false
-    }
   }
 
   # Bootstrap registers resource providers; this level has no rights to.
   resource_provider_registrations = "none"
 }
+
+# The APIM service only (apim.tf, ADR-0005). Same OIDC sign-in, from the same ARM_* variables.
+provider "azapi" {}
 
 # Reads lower levels' outputs only (ADR-0013). TFE_TOKEN and TFE_ORGANIZATION come from the workflow.
 provider "tfe" {}

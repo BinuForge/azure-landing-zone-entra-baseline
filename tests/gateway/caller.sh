@@ -48,7 +48,7 @@ if [ "$code" = 401 ] && grep -q "lacks the required data action" "$BODY"; then c
 record GW-09 T-04 "A direct call to the model, skipping the gateway, is refused" "401-no-role|403|no-response" "$code"
 
 limit=none
-for i in $(seq 1 15); do
+for i in $(seq 1 40); do
   code="$(chat "$DEPLOYMENT" "$gateway_token" "$LONG")"
   if [ "$code" != 200 ]; then limit="$code"; break; fi
 done
