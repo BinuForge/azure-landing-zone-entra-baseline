@@ -89,6 +89,15 @@ run "only_levels_0_and_1_reach_the_root" {
   }
 }
 
+run "deployment_validator_can_only_validate" {
+  command = plan
+
+  assert {
+    condition     = length(one(azurerm_role_definition.deployment_validator.permissions).actions) == 1 && contains(one(azurerm_role_definition.deployment_validator.permissions).actions, "Microsoft.Resources/deployments/validate/action")
+    error_message = "The validator role must hold exactly one action: validate."
+  }
+}
+
 run "assignments_are_typed_as_service_principals" {
   command = plan
 

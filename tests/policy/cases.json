@@ -1,0 +1,41 @@
+[
+  {
+    "id": "P-01",
+    "test": "A resource group outside Australia is refused",
+    "scope": "subscription",
+    "template": "rg-westeurope.json",
+    "expect": "denied",
+    "by": "lab-baseline"
+  },
+  {
+    "id": "P-02",
+    "test": "An AI account of a kind other than AIServices is refused in corp",
+    "scope": "lab-rg-aiservices-prd-ae",
+    "template": "openai-kind.json",
+    "expect": "denied",
+    "by": "lab-ai-account"
+  },
+  {
+    "id": "P-03",
+    "test": "An AI account with public network access and keys is refused in corp",
+    "scope": "lab-rg-aiservices-prd-ae",
+    "template": "public-keys.json",
+    "expect": "denied",
+    "by": "lab-ai-account"
+  },
+  {
+    "id": "P-04",
+    "test": "A public IP address is refused in corp",
+    "scope": "lab-rg-connectivity-prd-ae",
+    "template": "public-ip.json",
+    "expect": "denied",
+    "by": "lab-corp-no-pip"
+  },
+  {
+    "id": "P-05",
+    "test": "The same public IP is allowed in the study group, through its expiring waiver",
+    "scope": "lab-rg-study-np-ae",
+    "template": "public-ip.json",
+    "expect": "allowed"
+  }
+]

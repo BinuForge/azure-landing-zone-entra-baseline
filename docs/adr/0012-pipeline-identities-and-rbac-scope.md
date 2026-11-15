@@ -70,6 +70,7 @@ Scope "root" is the tenant root management group. Resource group names follow `d
 |---|---|---|---|
 | `lab-azure-l0-plan` | Reader | root | Read management groups and placement |
 | `lab-azure-l0-apply` | Management Group Contributor | root | Create the hierarchy |
+| `lab-azure-l0-plan` | Custom `lab-role-deployment-validator`: `deployments/validate/action` only | subscription | Policy tests in the evidence workflow: validation runs the policy engine and creates nothing |
 | `lab-azure-l1-plan` | Reader | root | Read policy state |
 | `lab-azure-l1-apply` | Resource Policy Contributor | root | Policy definitions and assignments. Deny and audit only, so no policy identity needs roles |
 | `lab-azure-l2-plan` | Reader | management, connectivity, DNS groups | |
