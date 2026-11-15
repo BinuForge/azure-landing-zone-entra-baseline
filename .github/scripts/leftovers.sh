@@ -14,6 +14,9 @@ PREFIX="${PREFIX:-lab}"
 # Created by bootstrap and kept between teardowns, so never a leftover.
 KEEP_GROUP="${PREFIX}-rg-bootstrap-prd-ae"
 
+# Study experiments: reported as a warning so they are not forgotten, but never fail a teardown.
+STUDY_GROUP="${PREFIX}-rg-study-np-ae"
+
 # Azure creates these on its own and they do not bill.
 EXPECTED_TYPES="'microsoft.network/networkwatchers'"
 
@@ -23,7 +26,12 @@ FREE_DEFENDER_PLANS="Discovery FoundationalCspm"
 
 resources="$(az rest --method post \
   --url "https://management.azure.com/providers/Microsoft.ResourceGraph/resources?api-version=2022-10-01" \
-  --body "{\"subscriptions\":[\"$SUB\"],\"query\":\"resources | where resourceGroup !~ '$KEEP_GROUP' and type !in~ ($EXPECTED_TYPES) | project type, resourceGroup, name | order by type asc\"}" \
+  --body "{\"subscriptions\":[\"$SUB\"],\"query\":\"resources | where resourceGroup !~ '$KEEP_GROUP' and resourceGroup !~ '$STUDY_GROUP' and type !in~ ($EXPECTED_TYPES) | project type, resourceGroup, name | order by type asc\"}" \
+  --query data -o json)"
+
+study="$(az rest --method post \
+  --url "https://management.azure.com/providers/Microsoft.ResourceGraph/resources?api-version=2022-10-01" \
+  --body "{\"subscriptions\":[\"$SUB\"],\"query\":\"resources | where resourceGroup =~ '$STUDY_GROUP' | project type, name | order by type asc\"}" \
   --query data -o json)"
 
 defender="$(az rest --method get \
@@ -38,8 +46,8 @@ deleted_ai="$(az rest --method get \
   --url "https://management.azure.com/subscriptions/$SUB/providers/Microsoft.CognitiveServices/deletedAccounts?api-version=2024-10-01" \
   --query "value[].{name:name, location:location}" -o json)"
 
-report="$(jq -n --argjson r "$resources" --argjson d "$defender" --argjson a "$deleted_ai" \
-  '{resources: $r, billable_defender_plans: $d, soft_deleted_ai_accounts: $a,
+report="$(jq -n --argjson r "$resources" --argjson d "$defender" --argjson a "$deleted_ai" --argjson s "$study" \
+  '{resources: $r, billable_defender_plans: $d, soft_deleted_ai_accounts: $a, study_warning: $s,
     clean: (($r | length) == 0 and ($d | length) == 0 and ($a | length) == 0)}')"
 
 [ -n "$OUT" ] && echo "$report" > "$OUT"
@@ -52,7 +60,11 @@ summary="$(echo "$report" | jq -r '
      (.resources[] | "| Resource | `\(.type)` | `\(.resourceGroup)` | `\(.name)` |"),
      (.billable_defender_plans[] | "| Defender plan | `\(.)` | | |"),
      (.soft_deleted_ai_accounts[] | "| Soft-deleted AI account | | | `\(.name)` (\(.location)) |")
-   end)')"
+   end),
+  (if (.study_warning | length) > 0 then
+     "\nWarning: \(.study_warning | length) resource(s) in the study group. Not a failure; delete them when done:",
+     (.study_warning[] | "- `\(.type)` `\(.name)`")
+   else empty end)')"
 
 echo "$summary"
 [ -n "${GITHUB_STEP_SUMMARY:-}" ] && echo "$summary" >> "$GITHUB_STEP_SUMMARY"
