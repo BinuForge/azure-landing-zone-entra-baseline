@@ -14,7 +14,9 @@ locals {
   # A level may assign only these roles, and only to service principals (ADR-0012, decision 3).
   delegations = {
     l3 = [local.role_ids.cognitive_services_user, local.role_ids.log_analytics_reader]
-    l4 = [local.role_ids.reader, local.role_ids.cost_management_reader, local.role_ids.log_analytics_reader]
+    # Level 3's prompt-query alert reads the ops workspace with its own identity (threat model C-16).
+    l3-management = [local.role_ids.log_analytics_reader]
+    l4            = [local.role_ids.reader, local.role_ids.cost_management_reader, local.role_ids.log_analytics_reader]
   }
 
   delegation_conditions = {
@@ -63,6 +65,7 @@ locals {
     "azure-l3-apply/spoke-join/connectivity"          = { identity = "azure-l3-apply", role = "custom:spoke-network-join", scope = local.rg.connectivity }
     "azure-l3-apply/spoke-join/dns"                   = { identity = "azure-l3-apply", role = "custom:spoke-network-join", scope = local.rg.dns }
     "azure-l3-apply/rbac-admin/aiservices"            = { identity = "azure-l3-apply", role = "Role Based Access Control Administrator", scope = local.rg.aiservices, condition = "l3" }
+    "azure-l3-apply/rbac-admin/management"            = { identity = "azure-l3-apply", role = "Role Based Access Control Administrator", scope = local.rg.management, condition = "l3-management" }
     "azure-l4-plan/reader/subscription"               = { identity = "azure-l4-plan", role = "Reader", scope = local.subscription_scope }
     "azure-l4-apply/contributor/opsagent"             = { identity = "azure-l4-apply", role = "Contributor", scope = local.rg.opsagent }
     "azure-l4-apply/rbac-admin/subscription"          = { identity = "azure-l4-apply", role = "Role Based Access Control Administrator", scope = local.subscription_scope, condition = "l4" }

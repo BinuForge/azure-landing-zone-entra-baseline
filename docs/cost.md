@@ -12,6 +12,7 @@ flag that defaults to `false`.
 | Nightly workflow resets costly flags to `false` | Not built: a flag changes only by pull request, and `destroy.yml` removes everything after a session |
 | `destroy.yml` workflow | Built: levels 2 and 3, then the leftovers check (docs/runbooks/destroy.md) |
 | Log Analytics daily caps | 0.5 GB ops, 0.1 GB prompts: ingestion stops at the cap |
+| Always-on alert | The prompt query alert evaluates every 5 minutes: about USD 1.50 a month, not yet verified in the calculator |
 
 ## Cost per flag
 
@@ -37,11 +38,11 @@ Warn before a phase would take the total past **400**.
 
 | Root | Phase | Resources | Running total |
 |---|---|---|---|
-| `bootstrap/` | 3 | 134 (budget, 7 resource groups, lock, 12 apps, 12 service principals, 1 app role assignment, 11 federated credentials, 4 custom roles, 26 role assignments, subscription placement, hierarchy settings, report store account and container, 11 environments, 6 branch policies, 20 variables, 18 secrets) | 134 |
-| `tfc/` | 3 | 37 (3 projects, 12 workspaces, 12 workspace settings, 2 variable sets, 2 attachments, 6 variables) | 171 |
-| `azure/level-0-org` | 4 | 10 management groups | 181 |
-| `azure/level-1-governance` | 4 | 13 (2 custom definitions, 3 initiatives, 4 assignments, 4 exemptions) | 194 |
-| `azure/level-2-platform/management` | 4 | 1 Log Analytics workspace | 195 |
-| `azure/level-2-platform/connectivity` | 4 | 3 (hub VNet, 2 reserved subnets) | 198 |
-| `azure/level-2-platform/dns` | 4 | 6 (3 private DNS zones, 3 hub links) | 204 |
-| `azure/level-3-aiservices` | 5 | 39 (spoke VNet, 2 subnets, 2 NSGs, 2 NSG associations, 2 peerings, 3 zone links, account, project, private endpoint, guardrail, 1 model deployment, prompt workspace, 2 diagnostic settings, 11 APIM NSG rules, and 8 APIM resources while enable_apim is on) | 243 |
+| `bootstrap/` | 3 | 135 (budget, 7 resource groups, lock, 12 apps, 12 service principals, 1 app role assignment, 11 federated credentials, 4 custom roles, 27 role assignments, subscription placement, hierarchy settings, report store account and container, 11 environments, 6 branch policies, 20 variables, 18 secrets) | 135 |
+| `tfc/` | 3 | 37 (3 projects, 12 workspaces, 12 workspace settings, 2 variable sets, 2 attachments, 6 variables) | 172 |
+| `azure/level-0-org` | 4 | 10 management groups | 182 |
+| `azure/level-1-governance` | 4 | 13 (2 custom definitions, 3 initiatives, 4 assignments, 4 exemptions) | 195 |
+| `azure/level-2-platform/management` | 4 | 1 Log Analytics workspace | 196 |
+| `azure/level-2-platform/connectivity` | 4 | 3 (hub VNet, 2 reserved subnets) | 199 |
+| `azure/level-2-platform/dns` | 4 | 6 (3 private DNS zones, 3 hub links) | 205 |
+| `azure/level-3-aiservices` | 5 | 42 (spoke VNet, 2 subnets, 2 NSGs, 2 NSG associations, 2 peerings, 3 zone links, account, project, private endpoint, guardrail, 1 model deployment, prompt workspace, 2 diagnostic settings, prompt query alert and its role, 11 APIM NSG rules, and 9 APIM resources while enable_apim is on) | 247 |

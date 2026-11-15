@@ -50,9 +50,9 @@ variable "apim_publisher_email" {
 }
 
 variable "gateway_tokens_per_minute" {
-  description = "Token limit per caller at the gateway (threat model C-18)."
+  description = "Token limit per caller at the gateway (threat model C-18). One ops agent turn with tool results is about 5,000 tokens; 8,000 leaves headroom under the deployment's capacity."
   type        = number
-  default     = 2000
+  default     = 8000
 
   validation {
     condition     = var.gateway_tokens_per_minute >= 100 && var.gateway_tokens_per_minute <= 10000

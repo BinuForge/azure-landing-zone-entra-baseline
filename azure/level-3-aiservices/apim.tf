@@ -150,6 +150,14 @@ resource "azurerm_api_management_api_policy" "openai" {
   })
 
   depends_on = [azurerm_api_management_named_value.kill_switch]
+
+  lifecycle {
+    # One caller must not be able to use a whole deployment's capacity.
+    precondition {
+      condition     = var.gateway_tokens_per_minute < min([for d in values(var.model_deployments) : d.capacity]...) * 1000
+      error_message = "gateway_tokens_per_minute must be below the smallest deployment's capacity."
+    }
+  }
 }
 
 # The only data-plane role on Foundry (ADR-0008). Allowed by this level's role assignment condition.
@@ -161,6 +169,39 @@ resource "azurerm_role_assignment" "apim_openai_user" {
   principal_id         = one(azurerm_api_management.this[0].identity).principal_id
   principal_type       = "ServicePrincipal"
   description          = "AI gateway, ADR-0008. The only caller allowed on the model."
+}
+
+# The run ID travels from the caller to the model (threat model C-22). Gateway logs record it and the ID
+# sent on to Foundry, and never a request or response body (ADR-0010).
+resource "azurerm_api_management_diagnostic" "azuremonitor" {
+  count = local.apim
+
+  identifier               = "azuremonitor"
+  resource_group_name      = local.rg
+  api_management_name      = azurerm_api_management.this[0].name
+  api_management_logger_id = "${azurerm_api_management.this[0].id}/loggers/azuremonitor"
+  sampling_percentage      = 100
+  always_log_errors        = true
+  log_client_ip            = false
+  verbosity                = "information"
+
+  frontend_request {
+    headers_to_log = ["x-correlation-id"]
+    body_bytes     = 0
+  }
+
+  backend_request {
+    headers_to_log = ["x-ms-client-request-id"]
+    body_bytes     = 0
+  }
+
+  frontend_response {
+    body_bytes = 0
+  }
+
+  backend_response {
+    body_bytes = 0
+  }
 }
 
 resource "azurerm_monitor_diagnostic_setting" "apim_ops" {

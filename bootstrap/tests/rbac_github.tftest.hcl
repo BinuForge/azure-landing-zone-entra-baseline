@@ -75,6 +75,15 @@ run "every_role_assignment_admin_is_constrained" {
     condition     = strcontains(azurerm_role_assignment.pipeline["azure-l3-apply/rbac-admin/aiservices"].condition, "'ServicePrincipal'")
     error_message = "Delegated role assignment must be limited to service principals."
   }
+
+  # On the management group, level 3 may grant Log Analytics Reader only: never the model role.
+  assert {
+    condition = (
+      strcontains(azurerm_role_assignment.pipeline["azure-l3-apply/rbac-admin/management"].condition, "73c42c96-874c-492b-b04d-ab87d138a893")
+      && !strcontains(azurerm_role_assignment.pipeline["azure-l3-apply/rbac-admin/management"].condition, "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd")
+    )
+    error_message = "Level 3's management delegation must allow Log Analytics Reader and nothing else."
+  }
 }
 
 run "only_levels_0_and_1_reach_the_root" {
