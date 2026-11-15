@@ -89,6 +89,23 @@ run "only_levels_0_and_1_reach_the_root" {
   }
 }
 
+run "log_linker_holds_only_the_linking_actions" {
+  command = plan
+
+  assert {
+    condition = toset(one(azurerm_role_definition.log_linker.permissions).actions) == toset([
+      "Microsoft.OperationalInsights/workspaces/read",
+      "Microsoft.OperationalInsights/workspaces/sharedKeys/action",
+    ])
+    error_message = "The log linker role must hold only what diagnostic settings need."
+  }
+
+  assert {
+    condition     = keys(azurerm_role_assignment.log_linker) == ["azure-l3-apply"]
+    error_message = "Only levels that send diagnostics to the ops workspace get the log linker role."
+  }
+}
+
 run "assignments_are_typed_as_service_principals" {
   command = plan
 
