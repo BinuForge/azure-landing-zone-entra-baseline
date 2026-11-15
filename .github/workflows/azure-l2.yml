@@ -1,0 +1,55 @@
+name: azure-l2
+
+# Level 2: shared platform services, one workspace per component, applied in dependency order:
+# management, then connectivity, then DNS. Each component plans with lab-azure-l2-plan and applies its own
+# saved plan after approval in lab-azure-l2-apply. Components are added in dependency order (ADR-0013).
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - azure/level-2-platform/**
+      - .github/workflows/azure-l2.yml
+      - .github/workflows/_plan.yml
+      - .github/workflows/_apply.yml
+  push:
+    branches: [main]
+    paths:
+      - azure/level-2-platform/**
+      - .github/workflows/azure-l2.yml
+      - .github/workflows/_plan.yml
+      - .github/workflows/_apply.yml
+  workflow_dispatch:
+
+permissions: {}
+
+# One level 2 run at a time. A deploy and a teardown of the same root never overlap either: _plan.yml and
+# _apply.yml queue every job on tf-<working directory>, whichever workflow calls them.
+concurrency:
+  group: azure-l2
+  cancel-in-progress: false
+
+jobs:
+  plan-management:
+    uses: ./.github/workflows/_plan.yml
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    with:
+      working_directory: azure/level-2-platform/management
+      environment: lab-azure-l2-plan
+      comment: ${{ github.event_name == 'pull_request' }}
+    secrets: inherit
+
+  apply-management:
+    needs: plan-management
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && needs.plan-management.outputs.has_changes == 'true'
+    uses: ./.github/workflows/_apply.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      working_directory: azure/level-2-platform/management
+      environment: lab-azure-l2-apply
+      artifact: ${{ needs.plan-management.outputs.artifact }}
+    secrets: inherit
