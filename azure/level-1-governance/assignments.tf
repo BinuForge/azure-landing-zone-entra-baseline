@@ -13,16 +13,41 @@ resource "azurerm_management_group_policy_assignment" "baseline" {
   }
 }
 
-resource "azurerm_management_group_policy_assignment" "ai" {
-  name                 = "${var.prefix}-ai-baseline"
-  display_name         = "Lab AI services baseline v1"
+resource "azurerm_management_group_policy_assignment" "ai_account" {
+  name                 = "${var.prefix}-ai-account"
+  display_name         = "Lab AI services account baseline v1"
   management_group_id  = local.mg.landingzones
-  policy_definition_id = azurerm_management_group_policy_set_definition.ai.id
+  policy_definition_id = azurerm_management_group_policy_set_definition.ai_account.id
+
+  non_compliance_message {
+    content = "AI services accounts must be private, keyless and logged (ADR-0008, threat-model-ai.md)."
+  }
+}
+
+resource "azurerm_management_group_policy_assignment" "ai_deployments" {
+  name                 = "${var.prefix}-ai-deployments"
+  display_name         = "Lab AI model deployment baseline v1"
+  management_group_id  = local.mg.landingzones
+  policy_definition_id = azurerm_management_group_policy_set_definition.ai_deployments.id
 
   parameters = jsonencode({ approvedModelAssetIds = { value = var.approved_model_asset_ids } })
 
   non_compliance_message {
-    content = "AI services must be private, keyless, AIServices kind, and deploy only approved, generally available models (ADR-0008, threat-model-ai.md)."
+    content = "Only approved, generally available, Microsoft-sold models may be deployed (threat-model-ai.md C-24)."
+  }
+}
+
+# Microsoft does not allow this built-in inside a custom initiative, so it is assigned on its own.
+resource "azurerm_management_group_policy_assignment" "ai_kinds" {
+  name                 = "${var.prefix}-ai-kinds"
+  display_name         = "AI services: AIServices kind only"
+  management_group_id  = local.mg.landingzones
+  policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/${local.builtin.ai_allowed_kinds}"
+
+  parameters = jsonencode({ allowedKinds = { value = ["AIServices"] } })
+
+  non_compliance_message {
+    content = "Only the AIServices kind may be created, so every AI account gets the same baseline (ADR-0007)."
   }
 }
 
@@ -42,21 +67,33 @@ resource "azurerm_management_group_policy_assignment" "corp_no_public_ip" {
   }
 }
 
-# Audit only: Microsoft's view of compliance across the lab, used for the MCSB mapping.
+# Audit only: Microsoft's view of compliance across everything under the lab root, used for the MCSB
+# mapping. Defender for Cloud also assigns it to the subscription by default, outside code; this one covers
+# any future subscription too.
+#
+# Azure requires a managed identity because some of its policies are DeployIfNotExists. The identity is
+# given no roles, so it cannot remediate anything.
 resource "azurerm_management_group_policy_assignment" "mcsb" {
   name                 = "${var.prefix}-mcsb"
   display_name         = "Microsoft cloud security benchmark"
   management_group_id  = local.mg.root
   policy_definition_id = "/providers/Microsoft.Authorization/policySetDefinitions/${local.builtin.mcsb}"
   enforce              = false
+  location             = var.allowed_locations[0]
+
+  identity {
+    type = "SystemAssigned"
+  }
 }
 
 # Hands-on study needs the portal's defaults, such as public access and keys. The waiver is scoped to one
 # group, names its reason, and expires; renewing it is a pull request.
 resource "azurerm_resource_group_policy_exemption" "study" {
   for_each = {
-    ai     = azurerm_management_group_policy_assignment.ai.id
-    no-pip = azurerm_management_group_policy_assignment.corp_no_public_ip.id
+    ai-account     = azurerm_management_group_policy_assignment.ai_account.id
+    ai-deployments = azurerm_management_group_policy_assignment.ai_deployments.id
+    ai-kinds       = azurerm_management_group_policy_assignment.ai_kinds.id
+    no-pip         = azurerm_management_group_policy_assignment.corp_no_public_ip.id
   }
 
   name                 = "${var.prefix}-study-${each.key}"
