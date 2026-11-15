@@ -96,3 +96,23 @@ resource "azurerm_resource_group_policy_exemption" "study" {
     }
   }
 }
+
+# APIM Developer joined to a VNet needs a Standard public IP for its gateway and management traffic. The
+# exemption is for the no-public-IP policy only, in the AI services group only. Mitigated, not waived:
+# every caller is authenticated by Entra app role, limited and logged at the gateway (ADR-0008).
+resource "azurerm_resource_group_policy_exemption" "apim_public_ip" {
+  name                 = "${var.prefix}-apim-public-ip"
+  display_name         = "AI gateway: APIM public IP"
+  resource_group_id    = data.azurerm_resource_group.aiservices.id
+  policy_assignment_id = azurerm_management_group_policy_assignment.corp_no_public_ip.id
+  exemption_category   = "Mitigated"
+  expires_on           = var.apim_public_ip_exemption_expires_on
+  description          = "APIM Developer VNet injection requires a Standard public IP. Mitigated by Entra app role authentication, per-caller token limits and gateway logs (ADR-0008)."
+
+  lifecycle {
+    precondition {
+      condition     = timecmp(var.apim_public_ip_exemption_expires_on, timeadd(plantimestamp(), "2160h")) <= 0
+      error_message = "The APIM public IP exemption must be reviewed within 90 days. Choose an earlier date."
+    }
+  }
+}

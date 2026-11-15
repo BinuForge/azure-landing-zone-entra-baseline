@@ -9,6 +9,10 @@ data "azurerm_resource_group" "study" {
   name = "${var.prefix}-rg-study-np-ae"
 }
 
+data "azurerm_resource_group" "aiservices" {
+  name = "${var.prefix}-rg-aiservices-prd-ae"
+}
+
 locals {
   mg = { for k, mg in data.azurerm_management_group.this : k => mg.id }
 
