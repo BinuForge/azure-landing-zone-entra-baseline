@@ -155,6 +155,35 @@ resource "azurerm_role_assignment" "soft_delete_purger" {
   description        = "Bootstrap, ADR-0012. Purge soft-deleted APIM and AI accounts on teardown."
 }
 
+# Level 3 owns one role assignment on the ops workspace, the prompt-query alert's (threat model C-16), and
+# its plan identity must refresh it. Reader would do that, but Reader's */read also covers
+# workspaces/query/read, which would let a plan identity read the ops logs. This role reads role
+# assignments and nothing else.
+resource "azurerm_role_definition" "rbac_reader" {
+  name        = "${var.prefix}-role-rbac-reader"
+  scope       = local.subscription_scope
+  description = "Read role assignments and role definitions only. Created by bootstrap, ADR-0012."
+
+  permissions {
+    actions = [
+      "Microsoft.Authorization/roleAssignments/read",
+      "Microsoft.Authorization/roleDefinitions/read",
+    ]
+  }
+
+  assignable_scopes = [local.rg.management]
+}
+
+resource "azurerm_role_assignment" "rbac_reader" {
+  for_each = toset(["azure-l3-plan"])
+
+  scope              = local.rg.management
+  principal_id       = azuread_service_principal.pipeline[each.key].object_id
+  principal_type     = "ServicePrincipal"
+  role_definition_id = azurerm_role_definition.rbac_reader.role_definition_resource_id
+  description        = "Bootstrap, ADR-0012. Refresh level 3's role assignment on the ops workspace."
+}
+
 resource "azurerm_role_assignment" "pipeline" {
   for_each = local.role_assignments
 

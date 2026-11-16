@@ -77,6 +77,7 @@ Scope "root" is the tenant root management group. Resource group names follow `d
 | `lab-azure-l2-apply` | Network Contributor | connectivity group | Hub network |
 | `lab-azure-l2-apply` | Private DNS Zone Contributor | DNS group | Zones, and links to the hub |
 | `lab-azure-l3-plan` | Reader | AI services, connectivity and DNS groups | Plans read the peering and zone links that level 3 owns in the hub's groups |
+| `lab-azure-l3-plan` | Custom `lab-role-rbac-reader`: `roleAssignments/read` and `roleDefinitions/read` only | management group (resource group) | Plans refresh the alert's role on the ops workspace; Reader would also let them query the ops logs |
 | `lab-azure-l3-apply` | Contributor | AI services group | Foundry, APIM, prompt workspace |
 | `lab-azure-l3-apply` | Custom `lab-role-spoke-network-join`: peer with the hub and register private endpoint records | connectivity and DNS groups | Spoke joins the hub without owning it |
 | `lab-azure-l3-apply` | Custom `lab-role-log-linker`: `workspaces/read` and `workspaces/sharedKeys/action` only | management group (resource group) | Diagnostic settings to the ops workspace need it; local auth is off there, so the keys are unusable |
