@@ -129,6 +129,23 @@ run "purger_can_only_purge_soft_deleted_services" {
   }
 }
 
+run "rbac_reader_reads_role_assignments_only" {
+  command = plan
+
+  assert {
+    condition = toset(one(azurerm_role_definition.rbac_reader.permissions).actions) == toset([
+      "Microsoft.Authorization/roleAssignments/read",
+      "Microsoft.Authorization/roleDefinitions/read",
+    ])
+    error_message = "The RBAC reader must not read anything but role assignments and definitions, least of all logs."
+  }
+
+  assert {
+    condition     = keys(azurerm_role_assignment.rbac_reader) == ["azure-l3-plan"]
+    error_message = "Only level 3's plan owns a role assignment in the management group."
+  }
+}
+
 run "assignments_are_typed_as_service_principals" {
   command = plan
 
