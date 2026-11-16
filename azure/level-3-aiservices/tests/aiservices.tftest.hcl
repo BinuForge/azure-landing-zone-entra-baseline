@@ -64,6 +64,11 @@ override_data {
   }
 }
 
+# Mock providers cannot import, so every run plans a fresh build (imports.tf).
+variables {
+  adopt_gateway_diagnostic = false
+}
+
 run "account_has_no_public_path_and_no_keys" {
   command = plan
 
@@ -305,6 +310,19 @@ run "gateway_logs_the_run_id_but_never_a_body" {
       azurerm_api_management_diagnostic.azuremonitor[0].backend_response,
     ] : one(b).body_bytes == 0])
     error_message = "Gateway logs must never hold prompt or response content (ADR-0010)."
+  }
+
+  assert {
+    condition = alltrue([for b in [
+      azurerm_api_management_diagnostic.azuremonitor[0].frontend_request,
+      azurerm_api_management_diagnostic.azuremonitor[0].backend_request,
+    ] : anytrue([for q in one(one(b).data_masking).query_params : q.mode == "Hide" && q.value == "*"])])
+    error_message = "Gateway logs must hide query string values, as Azure's own default does."
+  }
+
+  assert {
+    condition     = !azurerm_api_management_diagnostic.azuremonitor[0].log_client_ip
+    error_message = "Gateway logs must not record the caller's IP (ADR-0010)."
   }
 }
 

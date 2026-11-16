@@ -76,3 +76,9 @@ variable "prompt_workspace_daily_quota_gb" {
     error_message = "prompt_workspace_daily_quota_gb must be above 0 and at most 1."
   }
 }
+
+variable "adopt_gateway_diagnostic" {
+  description = "One-off: import the gateway diagnostic Azure created on its own (imports.tf). Removed with imports.tf."
+  type        = bool
+  default     = true
+}
