@@ -70,14 +70,17 @@ who can stop AI traffic do not also hold deploy rights.
 
 The gateway logs every call to the ops workspace: the caller's `x-correlation-id` (the GitHub run ID) and
 the request ID it sent on to Foundry, never a body or the caller's IP (ADR-0010, threat model C-22).
-Records arrive 5 to 15 minutes after the call.
+Records arrive 5 to 15 minutes after the call. The forwarded ID is a GUID, so it lands in a `_g` column.
 
 ```kusto
 AzureDiagnostics
 | where ResourceProvider == "MICROSOFT.APIMANAGEMENT" and Category == "GatewayLogs"
 | where requestHeaders_x_correlation_id_s == "<run-id>"
-| project TimeGenerated, responseCode_d, backendRequestHeaders_x_ms_client_request_id_s
+| project TimeGenerated, responseCode_d, backendRequestHeaders_x_ms_client_request_id_g
 ```
+
+Foundry's usage log does not record that ID, so a gateway record joins Foundry's by time and deployment
+(threat model T-13c).
 
 ## Test it
 
