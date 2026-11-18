@@ -126,6 +126,7 @@ certificates, only federated credentials.
 | `AuthorizationFailed` at a management group scope | Not elevated, or the token predates elevation | Elevate, then `az logout` and `az login` |
 | GitHub 401 or 403 | `GITHUB_TOKEN` not set, or set in another terminal | `export GITHUB_TOKEN="$(gh auth token)"` |
 | Plan wants to replace an app or credential | A level or name changed in `tfc/workspaces.yaml` | Expected when renaming; every pipeline using it must be updated in the same change |
-| Plan wants to replace a role assignment | Its key, role, scope or description changed in `rbac.yaml` | Expected for a real change. For a rename, add a `moved` block in `rbac.tf` instead |
+| Plan wants to replace a role assignment | Its key, role, scope or description changed in `rbac.yaml`, or its delegation condition changed in `rbac.tf` | Expected for a real change. For a rename, add a `moved` block in `rbac.tf` instead |
 | Deleting a custom role hangs with "waiting for confirmation" | Azure has deleted it but still lists it for a few minutes | Stop with Ctrl+C, wait five minutes, then plan and apply again |
-| Warning: `new_subscriptions_land_in_sandbox` | The tenant's default management group was changed outside Terraform | `az account management-group hierarchy-settings update --name <tenant-id> --default-management-group lab-mg-sandbox` |
+| Warning: `new_subscriptions_land_in_sandbox` | The tenant's default management group was changed outside Terraform | `az account management-group hierarchy-settings update --name <tenant-id> --default-management-group /providers/Microsoft.Management/managementGroups/lab-mg-sandbox` |
+| `Invalid Hierarchy Settings creation parameters: expected format: '/providers/Microsoft.Management/managementGroups/ID'` | An in-place update of `azapi_resource.hierarchy_settings` sent the short name Azure stores | Apply with `-replace=azapi_resource.hierarchy_settings`, which sends the full ID from the config |

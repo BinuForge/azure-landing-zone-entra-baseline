@@ -74,10 +74,10 @@ resource "azapi_resource" "hierarchy_settings" {
     }
   }
 
-  response_export_values = ["properties.defaultManagementGroup"]
-
-  # Azure takes the group's full ID but stores its short name, so every plan showed a change it could never
-  # apply. The check below watches the stored value instead.
+  # Azure takes the group's full ID but stores, and returns, its short name, so every plan showed a change.
+  # Ignoring it has a cost: an in-place update would send the stored short name, which Azure refuses. To
+  # change either setting, apply with -replace=azapi_resource.hierarchy_settings, which sends the config.
+  # The check below watches the stored value.
   lifecycle {
     ignore_changes = [body.properties.defaultManagementGroup]
   }
@@ -85,9 +85,17 @@ resource "azapi_resource" "hierarchy_settings" {
   depends_on = [azurerm_role_assignment.maintainer_hierarchy_settings]
 }
 
+# Reads the stored setting on every plan. A failed read or a changed value is a warning, never an error.
 check "new_subscriptions_land_in_sandbox" {
+  data "azapi_resource" "hierarchy_settings" {
+    type                   = "Microsoft.Management/managementGroups/settings@2023-04-01"
+    name                   = "default"
+    parent_id              = local.root_scope
+    response_export_values = ["properties.defaultManagementGroup"]
+  }
+
   assert {
-    condition     = try(element(reverse(split("/", azapi_resource.hierarchy_settings.output.properties.defaultManagementGroup)), 0), "") == "${var.prefix}-mg-sandbox"
+    condition     = try(element(reverse(split("/", data.azapi_resource.hierarchy_settings.output.properties.defaultManagementGroup)), 0), "") == "${var.prefix}-mg-sandbox"
     error_message = "New subscriptions no longer land in ${var.prefix}-mg-sandbox. Set it back with az account management-group hierarchy-settings update (docs/runbooks/bootstrap.md)."
   }
 }
