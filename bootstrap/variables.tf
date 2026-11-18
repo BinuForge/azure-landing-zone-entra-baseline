@@ -99,3 +99,9 @@ variable "budget_contact_emails" {
     error_message = "budget_contact_emails needs at least one valid email address."
   }
 }
+
+variable "entra_diagnostics" {
+  description = "Send Entra audit, sign-in and risk logs to the security workspace. Needs Entra ID P1 or P2 (ADR-0016)."
+  type        = bool
+  default     = false
+}

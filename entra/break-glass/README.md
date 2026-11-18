@@ -36,13 +36,13 @@ Names, the domain and object IDs are not committed. Object IDs reach Terraform t
 
 | Where | What | Phase |
 |---|---|---|
-| Entra level 0 (`org`) | An exclusion group containing both accounts | Entra baseline |
+| Entra level 0 (`privileged`) | Both accounts and an exclusion group containing them, in a restricted management administrative unit, so no administrator or pipeline can change them without first taking an audited role on the unit (ADR-0016) | Entra baseline |
 | Entra level 1 (`ca`) | Every Conditional Access policy excludes that group | Entra baseline |
 | Checks | The accounts exist, are enabled, are cloud-only and hold Global Administrator; the plan fails otherwise | Entra baseline |
-| Azure level 2 (`management`) | Alert on any sign-in by either account | When Entra sign-in logs reach Log Analytics |
+| Bootstrap | Entra sign-in logs to the security workspace (`entra_diagnostics`), then an alert on any sign-in by either account | Logs with the Entra baseline; the alert after it |
 
-Sending sign-in logs to Log Analytics needs Entra ID P1 or P2. Without a licence the alert is
-documented but not deployed, and sign-ins are reviewed in the Entra admin centre instead.
+Sending sign-in logs to Log Analytics needs Entra ID P1 or P2. Without a licence, sign-ins are reviewed
+in the Entra admin centre instead.
 
 ## Testing
 

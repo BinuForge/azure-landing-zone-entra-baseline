@@ -41,7 +41,8 @@ fails the plan if one does not.
 |---|---|---|
 | Pipeline app registration (platform level) | `<prefix>-<area>-<level>-plan` / `-apply` | `lab-azure-l0-plan`, `lab-azure-l0-apply` |
 | Pipeline app registration (workload level) | `<prefix>-<area>-l4-plan` / `-apply` | `lab-azure-l4-apply` |
-| GitHub environment | same as the identity it unlocks | `lab-entra-l1-apply` |
+| Pipeline app registration (Entra, one pair per workspace) | `<prefix>-entra-<level>-<component>-plan` / `-apply` | `lab-entra-l1-ca-apply` (ADR-0016) |
+| GitHub environment | same as the identity it unlocks | `lab-entra-l1-ca-apply` |
 | Module release tag | `azure/<module>/<semver>` | `azure/private-endpoint/1.0.0` |
 | Branch | `phase-<n>-<slug>`, `fix/<slug>`, or `evidence/<label>` | `phase-1-skeleton`, `evidence/2026-11-19-aiservices` |
 

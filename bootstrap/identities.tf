@@ -4,21 +4,41 @@ locals {
   azure_levels   = distinct([for ws in local.tfc_config.workspaces : ws.level if ws.area == "azure"])
   workload_level = "l4"
 
-  # One plan and one apply identity per level (docs/naming.md). Levels 0-3 run on GitHub Actions;
+  # Azure: one plan and one apply identity per level (docs/naming.md). Levels 0-3 run on GitHub Actions;
   # level 4 runs in HCP Terraform with dynamic credentials (ADR-0012).
-  pipeline_identities = merge([
+  azure_identities = merge([
     for level in local.azure_levels : {
       for phase in ["plan", "apply"] : "azure-${level}-${phase}" => {
-        level  = level
+        target = "azure-${level}"
         phase  = phase
         issuer = level == local.workload_level ? "hcp" : "github"
+        adr    = "ADR-0012"
       }
     }
   ]...)
 
+  # Entra workspaces that hold Tier 0 objects. Anything able to change them can make itself Global
+  # Administrator, so CI only plans them and the maintainer applies them by hand (ADR-0016, decision 1).
+  maintainer_applied = ["entra-l0-privileged"]
+
+  # Entra: one pair per workspace, not per level, because their Graph permissions do not overlap
+  # (ADR-0016, decision 2). Tier 0 workspaces get a plan identity only.
+  entra_identities = merge([
+    for ws in local.tfc_config.workspaces : {
+      for phase in ["plan", "apply"] : "entra-${ws.level}-${ws.component}-${phase}" => {
+        target = "entra-${ws.level}-${ws.component}"
+        phase  = phase
+        issuer = "github"
+        adr    = "ADR-0016"
+      } if !(phase == "apply" && contains(local.maintainer_applied, "entra-${ws.level}-${ws.component}"))
+    } if ws.area == "entra"
+  ]...)
+
+  pipeline_identities = merge(local.azure_identities, local.entra_identities)
+
   # The ops agent's runner is not a pipeline identity: it reads the estate at run time (threat model C-06).
   runtime_identities = {
-    "azure-l4-opsagent-run" = { level = "l4", phase = "run", issuer = "github" }
+    "azure-l4-opsagent-run" = { target = "azure-l4", phase = "run", issuer = "github", adr = "ADR-0012" }
   }
 
   identities = merge(local.pipeline_identities, local.runtime_identities)
@@ -55,7 +75,7 @@ resource "azuread_application" "pipeline" {
   for_each = local.identities
 
   display_name     = "${var.prefix}-${each.key}"
-  description      = "${each.value.phase == "run" ? "Runtime" : "Pipeline"} identity for ${var.prefix}-azure-${each.value.level} (${each.value.phase}). Created by bootstrap, ADR-0012. Federated only: never add a secret."
+  description      = "${each.value.phase == "run" ? "Runtime" : "Pipeline"} identity for ${var.prefix}-${each.value.target} (${each.value.phase}). Created by bootstrap, ${each.value.adr}. Federated only: never add a secret."
   sign_in_audience = "AzureADMyOrg"
   owners           = [data.azuread_client_config.current.object_id]
 }

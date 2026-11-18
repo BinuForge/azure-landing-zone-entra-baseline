@@ -12,8 +12,9 @@ Never run it from CI, never `terraform destroy` it, and never add a resource tha
 |---|---|
 | `budget.tf` | Monthly budget with three actual and one forecast alert |
 | `resource_groups.tf` | Resource provider registrations, one resource group per level component, a delete lock on the bootstrap group |
-| `identities.tf` | Plan and apply app registrations per level, the ops agent runner, and their federated credentials |
-| `rbac.yaml` | Every role a pipeline identity holds, one row each (ADR-0012, decision 8) |
+| `identities.tf` | Plan and apply app registrations per Azure level and per Entra workspace, the ops agent runner, and their federated credentials |
+| `rbac.yaml` | Every Azure role and Graph permission a pipeline identity holds, one row each (ADR-0012, ADR-0016) |
+| `entra.tf` | The Graph permissions `rbac.yaml` may name, their admin consent, the security workspace and Entra's diagnostic settings (ADR-0016) |
 | `rbac.tf` | Custom roles, delegation conditions, and the role assignments from `rbac.yaml` |
 | `report_store.tf` | The ops agent's report store, its write-only role, and read access for the maintainer (ADR-0015) |
 | `governance.tf` | Subscription placement, hierarchy settings and the maintainer's own access |
@@ -70,6 +71,12 @@ Run from `bootstrap/`, on an up-to-date `main`, after the change has merged.
    az role assignment list --scope / --assignee "$(az ad signed-in-user show --query id -o tsv)" -o tsv
    ```
 
+## Entra diagnostics
+
+Entra's audit and sign-in logs go to `lab-log-security-prd-ae` once the tenant has Entra ID P1 or P2.
+Set `entra_diagnostics = true` in `env/lab.auto.tfvars` and run bootstrap. Before the licence ends, set
+it back to `false` and run again.
+
 ## Pipeline secrets
 
 Run after the first apply that creates environments, and every 30 days to rotate.
@@ -113,8 +120,16 @@ gh api repos/<owner>/<repo>/environments --jq '.environments[].name'
 az role assignment list --all --query "[?starts_with(description || '', 'Bootstrap')].roleDefinitionName" -o tsv | sort | uniq -c
 ```
 
-In the Entra admin centre, every `lab-azure-*` app registration must show no client secrets or
-certificates, only federated credentials.
+In the Entra admin centre, every `lab-azure-*` and `lab-entra-*` app registration must show no client
+secrets or certificates, only federated credentials. Each `lab-entra-*` one holds only the Microsoft
+Graph application permissions in `rbac.yaml`, with admin consent granted, and no delegated permissions:
+
+```sh
+# Graph permission IDs per Entra identity; compare with graph_permission_ids in entra.tf.
+for sp in $(az ad sp list --filter "startswith(displayName,'lab-entra-')" --query "[].id" -o tsv); do
+  az rest --url "https://graph.microsoft.com/v1.0/servicePrincipals/$sp/appRoleAssignments" --query "value[].appRoleId" -o tsv
+done
+```
 
 ## Troubleshooting
 
@@ -126,6 +141,7 @@ certificates, only federated credentials.
 | `AuthorizationFailed` at a management group scope | Not elevated, or the token predates elevation | Elevate, then `az logout` and `az login` |
 | GitHub 401 or 403 | `GITHUB_TOKEN` not set, or set in another terminal | `export GITHUB_TOKEN="$(gh auth token)"` |
 | Plan wants to replace an app or credential | A level or name changed in `tfc/workspaces.yaml` | Expected when renaming; every pipeline using it must be updated in the same change |
+| `Authorization_RequestDenied` creating an app role assignment | The signed-in account is not Global Administrator, or the token predates the role | Sign in as the daily admin, then `az logout` and `az login` |
 | Plan wants to replace a role assignment | Its key, role, scope or description changed in `rbac.yaml`, or its delegation condition changed in `rbac.tf` | Expected for a real change. For a rename, add a `moved` block in `rbac.tf` instead |
 | Deleting a custom role hangs with "waiting for confirmation" | Azure has deleted it but still lists it for a few minutes | Stop with Ctrl+C, wait five minutes, then plan and apply again |
 | Warning: `new_subscriptions_land_in_sandbox` | The tenant's default management group was changed outside Terraform | `az account management-group hierarchy-settings update --name <tenant-id> --default-management-group /providers/Microsoft.Management/managementGroups/lab-mg-sandbox` |

@@ -9,6 +9,12 @@ mock_provider "azurerm" {
 }
 
 mock_provider "azuread" {
+  # Microsoft Graph's service principal in this tenant (entra.tf).
+  mock_data "azuread_service_principal" {
+    defaults = {
+      object_id = "00000000-0000-0000-0000-000000000003"
+    }
+  }
   mock_data "azuread_client_config" {
     defaults = {
       object_id = "00000000-0000-0000-0000-000000000001"

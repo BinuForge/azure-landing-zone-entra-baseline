@@ -1,6 +1,7 @@
-# Every Azure role bootstrap grants a pipeline identity: the table in ADR-0012, as data. rbac.tf reads it.
+# Every Azure role and Microsoft Graph permission bootstrap grants a pipeline identity: the tables in
+# ADR-0012 and ADR-0016, as data. rbac.tf reads assignments, entra.tf reads graph.
 #
-# Key: <identity>/<name>/<scope>
+# assignments: Azure roles, keyed <identity>/<name>/<scope>
 #   identity  a key in tfc/workspaces.yaml's identities, or azure-l4-opsagent-run
 #   name      a short label, unique for that identity and scope
 #   scope     root (tenant root management group), subscription, a resource group key from
@@ -10,6 +11,8 @@
 # description: kept as Azure holds it; changing it replaces the assignment
 #
 # Custom roles are assigned by ID, so an assignment never waits for a new role's name to propagate.
+#
+# graph: Microsoft Graph application permissions, a list per identity (at the end of the file)
 
 assignments:
   # Level 0: management groups
@@ -87,3 +90,32 @@ assignments:
   azure-l4-opsagent-run/report-writer/reports:
     role: custom:report-writer
     description: Ops agent runner adds reports, ADR-0015.
+
+# Microsoft Graph application permissions, by identity (ADR-0016). Only Entra identities hold them, and only
+# permissions listed in entra.tf, which leaves out every permission that can grant roles or credentials.
+graph:
+  entra-l0-org-plan: [Group.Read.All, User.Read.All]
+  # Group.Create, not Group.ReadWrite.All: the identity changes only the groups it owns.
+  entra-l0-org-apply: [Group.Create, Group.Read.All, User.Read.All]
+  # Tier 0: the maintainer applies this workspace, so its only identity reads.
+  entra-l0-privileged-plan:
+    - AdministrativeUnit.Read.All
+    - Group.Read.All
+    - User.Read.All
+    - RoleManagement.Read.Directory
+    - RoleManagementPolicy.Read.Directory
+    - RoleEligibilitySchedule.Read.Directory
+    - RoleAssignmentSchedule.Read.Directory
+    - PrivilegedEligibilitySchedule.Read.AzureADGroup
+    - PrivilegedAssignmentSchedule.Read.AzureADGroup
+    - RoleManagementPolicy.Read.AzureADGroup
+  entra-l1-governance-plan: [Policy.Read.All]
+  entra-l1-governance-apply:
+    - Policy.Read.All
+    - Policy.ReadWrite.AuthenticationMethod
+    - Policy.ReadWrite.Authorization
+    - Policy.ReadWrite.CrossTenantAccess
+    - Policy.ReadWrite.ConsentRequest
+  entra-l1-ca-plan: [Policy.Read.All]
+  # Microsoft's least-privileged pair for policies, named locations and authentication strengths.
+  entra-l1-ca-apply: [Policy.Read.All, Policy.ReadWrite.ConditionalAccess]
