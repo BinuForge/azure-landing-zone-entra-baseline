@@ -252,8 +252,9 @@ run "gateway_policy_enforces_identity_limit_kill_switch_and_identity_swap" {
       "tokens-per-minute=\"8000\"",
       "<set-header name=\"Authorization\" exists-action=\"delete\" />",
       "<authentication-managed-identity resource=\"https://cognitiveservices.azure.com\" />",
+      "<value>@(context.RequestId.ToString())</value>",
     ] : strcontains(azurerm_api_management_api_policy.openai[0].xml_content, fragment)])
-    error_message = "The gateway policy must check the Entra role, limit tokens, honour the kill switch and swap to APIM's identity."
+    error_message = "The gateway policy must check the Entra role, limit tokens, honour the kill switch, swap to APIM's identity and send its request ID on to Foundry."
   }
 }
 
@@ -268,6 +269,17 @@ run "apim_subnet_denies_other_internet_egress" {
   assert {
     condition     = alltrue([for r in azurerm_network_security_rule.apim : r.destination_port_ranges == null || !contains(r.destination_port_ranges, "*")])
     error_message = "Azure rejects '*' inside a list of port ranges; any-port rules must use destination_port_range."
+  }
+
+  # Without this rule no gateway log arrives (T-13), and the rule must not widen to other ports or the
+  # whole internet.
+  assert {
+    condition = (
+      azurerm_network_security_rule.apim["allow-monitor-ingest"].destination_address_prefix == "AzureCloud" &&
+      azurerm_network_security_rule.apim["allow-monitor-ingest"].destination_port_ranges == toset(["443"]) &&
+      azurerm_network_security_rule.apim["allow-monitor-ingest"].direction == "Outbound"
+    )
+    error_message = "The APIM subnet must reach Azure on 443 only, so gateway logs can be ingested."
   }
 }
 
