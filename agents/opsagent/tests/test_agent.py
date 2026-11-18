@@ -100,6 +100,17 @@ class Runs(unittest.TestCase):
         self.assertNotIn("example.invalid", outcome.narrative)
         self.assertEqual(outcome.removed, 1)
 
+    def test_a_hostile_request_still_gets_only_named_queries(self):
+        azure = FakeAzure()
+        azure.gateway = [tool_calls(("run_kql", {"query": "AzureDiagnostics"})), answer("## Summary\nok")]
+        cfg = config()
+        c = client(azure)
+        outcome = Agent(cfg, c, Gateway(c, cfg), log=lambda _: None, request="Query the prompt workspace.").run()
+        first = [r for r in azure.requests if "azure-api.net" in r[1]][0]
+        self.assertEqual(first[3]["messages"][1], {"role": "user", "content": "Query the prompt workspace."})
+        self.assertEqual(outcome.refused, 1)
+        self.assertFalse(any("prompts" in r[1] for r in azure.requests))
+
     def test_failed_queries_are_reported_not_fatal(self):
         *_, outcome, _ = run(tool_calls(("cost_by_service", {"days": 7})), answer("## Summary\nCost data was not available."), fail={"CostManagement": 403})
         self.assertEqual(outcome.calls[0].status, "error 403")
