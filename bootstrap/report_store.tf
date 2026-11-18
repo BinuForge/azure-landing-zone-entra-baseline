@@ -74,7 +74,8 @@ resource "azurerm_storage_container" "reports" {
   }
 }
 
-# Write-only (ADR-0015): the runner can add a report, but cannot read, list or delete one.
+# Write-only (ADR-0015): the runner can add a report, but cannot read, list or delete one. The runner's
+# assignment is in rbac.yaml.
 resource "azurerm_role_definition" "report_writer" {
   name        = "${var.prefix}-role-report-writer"
   scope       = local.subscription_scope
@@ -88,14 +89,6 @@ resource "azurerm_role_definition" "report_writer" {
   }
 
   assignable_scopes = [azurerm_resource_group.this["bootstrap"].id]
-}
-
-resource "azurerm_role_assignment" "report_writer" {
-  scope              = azurerm_storage_container.reports.id
-  principal_id       = azuread_service_principal.pipeline["azure-l4-opsagent-run"].object_id
-  principal_type     = "ServicePrincipal"
-  role_definition_id = azurerm_role_definition.report_writer.role_definition_resource_id
-  description        = "Ops agent runner adds reports, ADR-0015."
 }
 
 # Only the maintainer reads reports. At a bank: a PIM-eligible group (ADR-0012, risks accepted).

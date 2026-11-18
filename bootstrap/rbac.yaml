@@ -1,0 +1,89 @@
+# Every Azure role bootstrap grants a pipeline identity: the table in ADR-0012, as data. rbac.tf reads it.
+#
+# Key: <identity>/<name>/<scope>
+#   identity  a key in tfc/workspaces.yaml's identities, or azure-l4-opsagent-run
+#   name      a short label, unique for that identity and scope
+#   scope     root (tenant root management group), subscription, a resource group key from
+#             resource_groups.tf, or reports (the report store container)
+# role:        a built-in role name, or custom:<name> for a role defined in bootstrap
+# condition:   a delegation in rbac.tf; required for custom:role-assigner, never used elsewhere
+# description: kept as Azure holds it; changing it replaces the assignment
+#
+# Custom roles are assigned by ID, so an assignment never waits for a new role's name to propagate.
+
+assignments:
+  # Level 0: management groups
+  azure-l0-plan/config-reader/root:
+    role: custom:config-reader
+  azure-l0-apply/mg-contributor/root:
+    role: Management Group Contributor
+
+  # Level 1: policy
+  azure-l1-plan/config-reader/root:
+    role: custom:config-reader
+  azure-l1-apply/policy-writer/root:
+    role: custom:policy-writer
+
+  # Level 2: management, connectivity, DNS
+  azure-l2-plan/config-reader/management:
+    role: custom:config-reader
+  azure-l2-plan/config-reader/connectivity:
+    role: custom:config-reader
+  azure-l2-plan/config-reader/dns:
+    role: custom:config-reader
+  azure-l2-apply/contributor/management:
+    role: Contributor
+  azure-l2-apply/network-contributor/connectivity:
+    role: Network Contributor
+  azure-l2-apply/dns-contributor/dns:
+    role: Private DNS Zone Contributor
+
+  # Level 3: AI services. Plans read what level 3 owns in the hub's groups and the alert's role on the
+  # ops workspace.
+  azure-l3-plan/config-reader/aiservices:
+    role: custom:config-reader
+  azure-l3-plan/config-reader/connectivity:
+    role: custom:config-reader
+  azure-l3-plan/config-reader/management:
+    role: custom:config-reader
+  azure-l3-plan/config-reader/dns:
+    role: custom:config-reader
+  azure-l3-apply/contributor/aiservices:
+    role: Contributor
+  azure-l3-apply/spoke-join/connectivity:
+    role: custom:spoke-network-join
+  azure-l3-apply/spoke-join/dns:
+    role: custom:spoke-network-join
+  azure-l3-apply/log-linker/management:
+    role: custom:log-linker
+    description: Bootstrap, ADR-0012. Diagnostic settings to the ops workspace.
+  azure-l3-apply/soft-delete-purger/subscription:
+    role: custom:soft-delete-purger
+    description: Bootstrap, ADR-0012. Purge soft-deleted APIM and AI accounts on teardown.
+  # Gives APIM's identity the model role (ADR-0008).
+  azure-l3-apply/role-assigner/aiservices:
+    role: custom:role-assigner
+    condition: l3
+  # Gives the prompt-query alert's identity read on the ops workspace (threat model C-16).
+  azure-l3-apply/role-assigner/management:
+    role: custom:role-assigner
+    condition: l3-management
+
+  # Level 4: the ops agent. Plans read the runner's assignments, which sit at several scopes.
+  azure-l4-plan/config-reader/subscription:
+    role: custom:config-reader
+  azure-l4-apply/contributor/opsagent:
+    role: Contributor
+  # Gives the runner its config and cost readers (threat model C-06).
+  azure-l4-apply/role-assigner/subscription:
+    role: custom:role-assigner
+    condition: l4
+  # Gives the runner its log reader on the ops workspace (threat model C-06).
+  azure-l4-apply/role-assigner/management:
+    role: custom:role-assigner
+    condition: l4-management
+
+  # The ops agent's runner adds reports and cannot read them (ADR-0015). Its read roles come from level 4.
+  azure-l4-opsagent-run/report-writer/reports:
+    role: custom:report-writer
+    description: Ops agent runner adds reports, ADR-0015.

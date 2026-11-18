@@ -16,7 +16,7 @@ Free, rulesets, environments with required reviewers, secret scanning and artifa
 available to public repositories, which is why it is public.
 
 Applied on 2026-11-14: merging, both rulesets, Actions settings and security features. Environments
-are created by bootstrap, so their rows below are still the target until bootstrap runs.
+were created by bootstrap and checked against the table below on 2026-11-18.
 
 ## Target settings
 
@@ -47,8 +47,10 @@ releases are consumed by tag.
 
 | Environment | Deployment branches | Required reviewer | Secrets |
 |---|---|---|---|
-| `<prefix>-<area>-<level>-plan` | Any branch in this repository | None | HCP token, plan identity client ID |
-| `<prefix>-<area>-<level>-apply` | `main` only | The maintainer, self-review allowed | HCP token, apply identity client ID |
+| `<prefix>-<area>-<level>-plan` | Any branch in this repository | None | HCP token, plan encryption key, tenant and subscription IDs; the client ID is a variable |
+| `<prefix>-<area>-<level>-apply` | `main` only | The maintainer, self-review allowed | As for plan, with the apply identity's client ID |
+| `lab-azure-l4-plan`, `lab-azure-l4-apply` | As above | As above | HCP token and plan encryption key only: level 4 signs in to Azure through HCP dynamic credentials |
+| `lab-azure-l4-opsagent-run` | `main` only | None: the runner only reads, and a run is started by hand | Tenant and subscription IDs; the client ID is a variable |
 
 Environment names match the identity they unlock (`docs/naming.md`), because the federated credential
 subject contains the environment name. Bootstrap creates them (ADR-0005).

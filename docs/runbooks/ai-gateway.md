@@ -66,6 +66,19 @@ The lab flips the switch with the level 3 apply identity, behind an approval. At
 dedicated gateway-operator role, activated through PIM, that can only write named values, so the people
 who can stop AI traffic do not also hold deploy rights.
 
+## Follow a run through the logs
+
+The gateway logs every call to the ops workspace: the caller's `x-correlation-id` (the GitHub run ID) and
+the request ID it sent on to Foundry, never a body or the caller's IP (ADR-0010, threat model C-22).
+Records arrive 5 to 15 minutes after the call.
+
+```kusto
+AzureDiagnostics
+| where ResourceProvider == "MICROSOFT.APIMANAGEMENT" and Category == "GatewayLogs"
+| where requestHeaders_x_correlation_id_s == "<run-id>"
+| project TimeGenerated, responseCode_d, backendRequestHeaders_x_ms_client_request_id_s
+```
+
 ## Test it
 
 Run `gateway-tests` from the Actions tab with a label such as `2026-11-15-gateway`. It runs 13 cases as
@@ -75,3 +88,5 @@ signed results in:
 ```sh
 bash .github/scripts/pull-evidence.sh <run-id> <label> gateway-tests.yml
 ```
+
+The ops agent's controls, which depend on the gateway, are tested by `agent-live-tests` (`tests/README.md`).

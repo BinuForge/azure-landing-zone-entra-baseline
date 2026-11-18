@@ -8,4 +8,4 @@
 | 1 | `level-1-conditionalaccess/` | Named locations, authentication strengths, Conditional Access baseline |
 | - | `break-glass/` | README and checks only; the accounts are created by hand |
 
-Each level is added in its own phase.
+Not built yet: only `break-glass/` exists. The levels are added with the Entra baseline, the next phase.

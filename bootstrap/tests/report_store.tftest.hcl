@@ -38,6 +38,15 @@ mock_provider "github" {
 
 mock_provider "azapi" {}
 
+# What Azure stores for the default management group: its short name (governance.tf check).
+override_resource {
+  target          = azapi_resource.hierarchy_settings
+  override_during = plan
+  values = {
+    output = { properties = { defaultManagementGroup = "lab-mg-sandbox" } }
+  }
+}
+
 variables {
   subscription_id            = "00000000-0000-0000-0000-000000000000"
   budget_contact_emails      = ["alerts@example.com"]
@@ -86,7 +95,7 @@ run "runner_can_only_add_reports" {
   }
 
   assert {
-    condition     = azurerm_role_assignment.report_writer.principal_type == "ServicePrincipal" && azurerm_role_assignment.report_reader.principal_type == "User"
+    condition     = azurerm_role_assignment.pipeline["azure-l4-opsagent-run/report-writer/reports"].principal_type == "ServicePrincipal" && azurerm_role_assignment.report_reader.principal_type == "User"
     error_message = "The runner writes; only the maintainer reads."
   }
 }

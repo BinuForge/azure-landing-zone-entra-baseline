@@ -74,5 +74,20 @@ resource "azapi_resource" "hierarchy_settings" {
     }
   }
 
+  response_export_values = ["properties.defaultManagementGroup"]
+
+  # Azure takes the group's full ID but stores its short name, so every plan showed a change it could never
+  # apply. The check below watches the stored value instead.
+  lifecycle {
+    ignore_changes = [body.properties.defaultManagementGroup]
+  }
+
   depends_on = [azurerm_role_assignment.maintainer_hierarchy_settings]
+}
+
+check "new_subscriptions_land_in_sandbox" {
+  assert {
+    condition     = try(element(reverse(split("/", azapi_resource.hierarchy_settings.output.properties.defaultManagementGroup)), 0), "") == "${var.prefix}-mg-sandbox"
+    error_message = "New subscriptions no longer land in ${var.prefix}-mg-sandbox. Set it back with az account management-group hierarchy-settings update (docs/runbooks/bootstrap.md)."
+  }
 }

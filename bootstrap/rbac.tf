@@ -14,12 +14,23 @@ locals {
     "Microsoft.Insights/components/query/read",
   ]
 
-  # Custom roles referenced by name in role_assignments, so the provider resolves the ID at each scope.
-  custom_role_names = {
-    "custom:config-reader" = azurerm_role_definition.config_reader.name
-    "custom:role-assigner" = azurerm_role_definition.role_assigner.name
-    "custom:policy-writer" = azurerm_role_definition.policy_writer.name
+  # Custom roles rbac.yaml may name, by ID. Assigning by name made a fresh role fail with "could not find
+  # role" until Azure listed it, minutes later.
+  custom_roles = {
+    config-reader      = azurerm_role_definition.config_reader.role_definition_id
+    role-assigner      = azurerm_role_definition.role_assigner.role_definition_id
+    policy-writer      = azurerm_role_definition.policy_writer.role_definition_id
+    spoke-network-join = azurerm_role_definition.spoke_network_join.role_definition_id
+    log-linker         = azurerm_role_definition.log_linker.role_definition_id
+    soft-delete-purger = azurerm_role_definition.soft_delete_purger.role_definition_id
+    report-writer      = azurerm_role_definition.report_writer.role_definition_id
   }
+
+  scopes = merge(local.rg, {
+    root         = local.root_scope
+    subscription = local.subscription_scope
+    reports      = azurerm_storage_container.reports.id
+  })
 
   # Built-in role IDs, checked with `az role definition list --name "<role>" --query [0].name`.
   role_ids = {
@@ -41,12 +52,9 @@ locals {
     l4-management = [azurerm_role_definition.log_reader.role_definition_id]
   }
 
-  # Roles a level may remove but no longer grant, so it can retire its own earlier grants. Empty these
-  # once level 4 has applied the custom readers.
-  retiring = {
-    l4            = [local.role_ids.cost_management_reader]
-    l4-management = [local.role_ids.log_analytics_reader]
-  }
+  # Roles a level may remove but no longer grant, so it can retire its own earlier grants after a change
+  # like ADR-0012 decision 7. Empty once each level has applied the change.
+  retiring = {}
 
   delegation_conditions = {
     for level, roles in local.delegations : level => trimspace(<<-EOT
@@ -75,31 +83,16 @@ locals {
     )
   }
 
-  # The table in ADR-0012, as data. Key: identity/role/scope.
+  # The table in ADR-0012, as data (rbac.yaml). Each entry gets one shape, so it can drive for_each.
   role_assignments = {
-    "azure-l0-plan/config-reader/root"                = { identity = "azure-l0-plan", role = "custom:config-reader", scope = local.root_scope }
-    "azure-l0-apply/mg-contributor/root"              = { identity = "azure-l0-apply", role = "Management Group Contributor", scope = local.root_scope }
-    "azure-l1-plan/config-reader/root"                = { identity = "azure-l1-plan", role = "custom:config-reader", scope = local.root_scope }
-    "azure-l1-apply/policy-writer/root"               = { identity = "azure-l1-apply", role = "custom:policy-writer", scope = local.root_scope }
-    "azure-l2-plan/config-reader/management"          = { identity = "azure-l2-plan", role = "custom:config-reader", scope = local.rg.management }
-    "azure-l2-plan/config-reader/connectivity"        = { identity = "azure-l2-plan", role = "custom:config-reader", scope = local.rg.connectivity }
-    "azure-l2-plan/config-reader/dns"                 = { identity = "azure-l2-plan", role = "custom:config-reader", scope = local.rg.dns }
-    "azure-l2-apply/contributor/management"           = { identity = "azure-l2-apply", role = "Contributor", scope = local.rg.management }
-    "azure-l2-apply/network-contributor/connectivity" = { identity = "azure-l2-apply", role = "Network Contributor", scope = local.rg.connectivity }
-    "azure-l2-apply/dns-contributor/dns"              = { identity = "azure-l2-apply", role = "Private DNS Zone Contributor", scope = local.rg.dns }
-    "azure-l3-plan/config-reader/aiservices"          = { identity = "azure-l3-plan", role = "custom:config-reader", scope = local.rg.aiservices }
-    "azure-l3-plan/config-reader/connectivity"        = { identity = "azure-l3-plan", role = "custom:config-reader", scope = local.rg.connectivity }
-    "azure-l3-plan/config-reader/management"          = { identity = "azure-l3-plan", role = "custom:config-reader", scope = local.rg.management }
-    "azure-l3-plan/config-reader/dns"                 = { identity = "azure-l3-plan", role = "custom:config-reader", scope = local.rg.dns }
-    "azure-l3-apply/contributor/aiservices"           = { identity = "azure-l3-apply", role = "Contributor", scope = local.rg.aiservices }
-    "azure-l3-apply/spoke-join/connectivity"          = { identity = "azure-l3-apply", role = "custom:spoke-network-join", scope = local.rg.connectivity }
-    "azure-l3-apply/spoke-join/dns"                   = { identity = "azure-l3-apply", role = "custom:spoke-network-join", scope = local.rg.dns }
-    "azure-l3-apply/role-assigner/aiservices"         = { identity = "azure-l3-apply", role = "custom:role-assigner", scope = local.rg.aiservices, condition = "l3" }
-    "azure-l3-apply/role-assigner/management"         = { identity = "azure-l3-apply", role = "custom:role-assigner", scope = local.rg.management, condition = "l3-management" }
-    "azure-l4-plan/config-reader/subscription"        = { identity = "azure-l4-plan", role = "custom:config-reader", scope = local.subscription_scope }
-    "azure-l4-apply/contributor/opsagent"             = { identity = "azure-l4-apply", role = "Contributor", scope = local.rg.opsagent }
-    "azure-l4-apply/role-assigner/subscription"       = { identity = "azure-l4-apply", role = "custom:role-assigner", scope = local.subscription_scope, condition = "l4" }
-    "azure-l4-apply/role-assigner/management"         = { identity = "azure-l4-apply", role = "custom:role-assigner", scope = local.rg.management, condition = "l4-management" }
+    for key, a in yamldecode(file("${path.module}/rbac.yaml")).assignments : key => {
+      identity    = split("/", key)[0]
+      scope       = lookup(local.scopes, try(split("/", key)[2], ""), null)
+      role        = a.role
+      custom      = startswith(a.role, "custom:") ? lookup(local.custom_roles, trimprefix(a.role, "custom:"), null) : null
+      condition   = try(a.condition, null)
+      description = try(a.description, "Bootstrap, ADR-0012.")
+    }
   }
 }
 
@@ -188,16 +181,6 @@ resource "azurerm_role_definition" "log_linker" {
   assignable_scopes = [local.rg.management]
 }
 
-resource "azurerm_role_assignment" "log_linker" {
-  for_each = toset(["azure-l3-apply"])
-
-  scope              = local.rg.management
-  principal_id       = azuread_service_principal.pipeline[each.key].object_id
-  principal_type     = "ServicePrincipal"
-  role_definition_id = azurerm_role_definition.log_linker.role_definition_resource_id
-  description        = "Bootstrap, ADR-0012. Diagnostic settings to the ops workspace."
-}
-
 # Purging a soft-deleted APIM or AI account is a subscription-level action, outside level 3's resource
 # group. Without it a teardown leaves both names reserved and blocks the next deploy. This role holds those
 # actions and nothing else (docs/runbooks/destroy.md).
@@ -216,16 +199,6 @@ resource "azurerm_role_definition" "soft_delete_purger" {
   }
 
   assignable_scopes = [local.subscription_scope]
-}
-
-resource "azurerm_role_assignment" "soft_delete_purger" {
-  for_each = toset(["azure-l3-apply"])
-
-  scope              = local.subscription_scope
-  principal_id       = azuread_service_principal.pipeline[each.key].object_id
-  principal_type     = "ServicePrincipal"
-  role_definition_id = azurerm_role_definition.soft_delete_purger.role_definition_resource_id
-  description        = "Bootstrap, ADR-0012. Purge soft-deleted APIM and AI accounts on teardown."
 }
 
 # Plan identities read configuration, never data (ADR-0012, decision 6). Defined at the root management
@@ -287,14 +260,48 @@ resource "azurerm_role_definition" "policy_writer" {
 resource "azurerm_role_assignment" "pipeline" {
   for_each = local.role_assignments
 
-  scope                = each.value.scope
-  principal_id         = azuread_service_principal.pipeline[each.value.identity].object_id
-  principal_type       = "ServicePrincipal"
-  role_definition_name = startswith(each.value.role, "custom:") ? lookup(local.custom_role_names, each.value.role, null) : each.value.role
-  role_definition_id   = each.value.role == "custom:spoke-network-join" ? azurerm_role_definition.spoke_network_join.role_definition_resource_id : null
+  scope          = each.value.scope
+  principal_id   = azuread_service_principal.pipeline[each.value.identity].object_id
+  principal_type = "ServicePrincipal"
+
+  # Custom roles by ID, in the form Azure returns for this scope, so the ID in state matches and nothing is
+  # replaced. Built-in roles by name.
+  role_definition_id = each.value.custom == null ? null : (
+    startswith(each.value.scope, "/subscriptions/")
+    ? "${local.subscription_scope}/providers/Microsoft.Authorization/roleDefinitions/${each.value.custom}"
+    : "/providers/Microsoft.Authorization/roleDefinitions/${each.value.custom}"
+  )
+  role_definition_name = each.value.custom == null ? each.value.role : null
 
   condition         = try(local.delegation_conditions[each.value.condition], null)
-  condition_version = can(each.value.condition) ? "2.0" : null
+  condition_version = each.value.condition == null ? null : "2.0"
 
-  description = "Bootstrap, ADR-0012."
+  description = each.value.description
+
+  lifecycle {
+    precondition {
+      condition     = each.value.scope != null && (each.value.custom != null || !startswith(each.value.role, "custom:"))
+      error_message = "rbac.yaml: ${each.key} needs a known scope (root, subscription, a resource group or reports) and a known role."
+    }
+    precondition {
+      condition     = (each.value.role == "custom:role-assigner") == (each.value.condition != null)
+      error_message = "rbac.yaml: ${each.key}: every role assigner needs a delegation condition, and nothing else takes one."
+    }
+  }
+}
+
+# Assignments that had their own resources before rbac.yaml.
+moved {
+  from = azurerm_role_assignment.log_linker["azure-l3-apply"]
+  to   = azurerm_role_assignment.pipeline["azure-l3-apply/log-linker/management"]
+}
+
+moved {
+  from = azurerm_role_assignment.soft_delete_purger["azure-l3-apply"]
+  to   = azurerm_role_assignment.pipeline["azure-l3-apply/soft-delete-purger/subscription"]
+}
+
+moved {
+  from = azurerm_role_assignment.report_writer
+  to   = azurerm_role_assignment.pipeline["azure-l4-opsagent-run/report-writer/reports"]
 }
