@@ -131,11 +131,11 @@ variable_sets:
         category: env
         value: "true"
         description: Use HCP dynamic credentials; no client secret exists.
-      TFC_AZURE_RUN_PLAN_CLIENT_ID:
+      TFC_AZURE_PLAN_CLIENT_ID:
         category: env
         input: l4_plan_client_id
-        description: lab-azure-l4-plan, trusted for run_phase plan only.
-      TFC_AZURE_RUN_APPLY_CLIENT_ID:
+        description: lab-azure-l4-plan, trusted for run_phase plan only. No TFC_AZURE_RUN_CLIENT_ID fallback is set.
+      TFC_AZURE_APPLY_CLIENT_ID:
         category: env
         input: l4_apply_client_id
         description: lab-azure-l4-apply, trusted for run_phase apply only.
