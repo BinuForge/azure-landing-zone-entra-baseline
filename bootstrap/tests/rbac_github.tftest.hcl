@@ -34,6 +34,72 @@ mock_provider "github" {
 
 mock_provider "azapi" {}
 
+# What Azure stores for the default management group: its short name (governance.tf check).
+override_resource {
+  target          = azapi_resource.hierarchy_settings
+  override_during = plan
+  values = {
+    output = { properties = { defaultManagementGroup = "lab-mg-sandbox" } }
+  }
+}
+
+# A distinct ID per custom role, so a test can tell which role an assignment names.
+override_resource {
+  target          = azurerm_role_definition.config_reader
+  override_during = plan
+  values = {
+    role_definition_id = "00000000-0000-0000-0000-0000000000c1"
+  }
+}
+
+override_resource {
+  target          = azurerm_role_definition.role_assigner
+  override_during = plan
+  values = {
+    role_definition_id = "00000000-0000-0000-0000-0000000000c2"
+  }
+}
+
+override_resource {
+  target          = azurerm_role_definition.policy_writer
+  override_during = plan
+  values = {
+    role_definition_id = "00000000-0000-0000-0000-0000000000c3"
+  }
+}
+
+override_resource {
+  target          = azurerm_role_definition.spoke_network_join
+  override_during = plan
+  values = {
+    role_definition_id = "00000000-0000-0000-0000-0000000000c4"
+  }
+}
+
+override_resource {
+  target          = azurerm_role_definition.log_linker
+  override_during = plan
+  values = {
+    role_definition_id = "00000000-0000-0000-0000-0000000000c5"
+  }
+}
+
+override_resource {
+  target          = azurerm_role_definition.soft_delete_purger
+  override_during = plan
+  values = {
+    role_definition_id = "00000000-0000-0000-0000-0000000000c6"
+  }
+}
+
+override_resource {
+  target          = azurerm_role_definition.report_writer
+  override_during = plan
+  values = {
+    role_definition_id = "00000000-0000-0000-0000-0000000000c7"
+  }
+}
+
 variables {
   subscription_id            = "00000000-0000-0000-0000-000000000000"
   budget_contact_emails      = ["alerts@example.com"]
@@ -41,14 +107,44 @@ variables {
   hcp_organization           = "example-org"
 }
 
-# Custom-role assignments are skipped: their name is computed, and the custom role's actions are
-# checked separately below.
 run "no_identity_is_owner_or_user_access_administrator" {
   command = plan
 
   assert {
-    condition     = alltrue([for k, ra in azurerm_role_assignment.pipeline : !contains(["Owner", "User Access Administrator"], ra.role_definition_name) if !strcontains(k, "/spoke-join/")])
+    condition     = alltrue([for a in local.role_assignments : !contains(["Owner", "User Access Administrator"], a.role)])
     error_message = "No pipeline identity may hold Owner or User Access Administrator (ADR-0012)."
+  }
+}
+
+run "custom_roles_are_assigned_by_id_in_azures_form" {
+  command = plan
+
+  assert {
+    condition     = length(azurerm_role_assignment.pipeline) == 26
+    error_message = "rbac.yaml holds every pipeline identity's role assignment."
+  }
+
+  # The form Azure returns for each scope, so the ID in state matches and nothing is replaced.
+  assert {
+    condition = (
+      azurerm_role_assignment.pipeline["azure-l0-plan/config-reader/root"].role_definition_id == "/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-0000000000c1" &&
+      azurerm_role_assignment.pipeline["azure-l4-plan/config-reader/subscription"].role_definition_id == "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-0000000000c1"
+    )
+    error_message = "Custom roles are assigned by ID: root scope without a subscription, every other scope with one."
+  }
+
+  assert {
+    condition     = azurerm_role_assignment.pipeline["azure-l2-apply/contributor/management"].role_definition_name == "Contributor"
+    error_message = "Built-in roles are assigned by name."
+  }
+
+  # A changed description would replace the assignment.
+  assert {
+    condition = (
+      azurerm_role_assignment.pipeline["azure-l4-opsagent-run/report-writer/reports"].description == "Ops agent runner adds reports, ADR-0015." &&
+      azurerm_role_assignment.pipeline["azure-l2-apply/contributor/management"].description == "Bootstrap, ADR-0012."
+    )
+    error_message = "Assignments keep the description Azure holds."
   }
 }
 
@@ -57,7 +153,7 @@ run "every_role_assignment_admin_is_constrained" {
 
   assert {
     condition = alltrue([
-      for k, ra in azurerm_role_assignment.pipeline : ra.role_definition_name == azurerm_role_definition.role_assigner.name && ra.condition != null && ra.condition_version == "2.0"
+      for k, ra in azurerm_role_assignment.pipeline : endswith(ra.role_definition_id, "/${azurerm_role_definition.role_assigner.role_definition_id}") && ra.condition != null && ra.condition_version == "2.0"
       if strcontains(k, "/role-assigner/")
     ])
     error_message = "Every role assigner assignment must carry a condition."
@@ -91,9 +187,10 @@ run "only_levels_0_and_1_reach_the_root" {
   command = plan
 
   assert {
+    # By the scope in the key: the report container's ID is not known until it exists.
     condition = alltrue([
-      for k, ra in azurerm_role_assignment.pipeline : can(regex("^azure-l[01]-", k))
-      if startswith(ra.scope, "/providers/Microsoft.Management/managementGroups/")
+      for k, a in local.role_assignments : can(regex("^azure-l[01]-", k))
+      if split("/", k)[2] == "root"
     ])
     error_message = "Only levels 0 and 1 may hold roles at the root management group."
   }
@@ -111,7 +208,7 @@ run "log_linker_holds_only_the_linking_actions" {
   }
 
   assert {
-    condition     = keys(azurerm_role_assignment.log_linker) == ["azure-l3-apply"]
+    condition     = [for k, a in local.role_assignments : k if a.custom == azurerm_role_definition.log_linker.role_definition_id] == ["azure-l3-apply/log-linker/management"]
     error_message = "Only levels that send diagnostics to the ops workspace get the log linker role."
   }
 }
@@ -125,7 +222,7 @@ run "purger_can_only_purge_soft_deleted_services" {
   }
 
   assert {
-    condition     = keys(azurerm_role_assignment.soft_delete_purger) == ["azure-l3-apply"]
+    condition     = [for k, a in local.role_assignments : k if a.custom == azurerm_role_definition.soft_delete_purger.role_definition_id] == ["azure-l3-apply/soft-delete-purger/subscription"]
     error_message = "Only level 3 creates services that need purging."
   }
 }
@@ -154,16 +251,15 @@ run "no_pipeline_identity_reads_log_data" {
   }
 
   assert {
-    condition     = alltrue([for k, ra in azurerm_role_assignment.pipeline : ra.role_definition_name == azurerm_role_definition.config_reader.name if strcontains(k, "-plan/")])
+    condition     = alltrue([for k, ra in azurerm_role_assignment.pipeline : endswith(ra.role_definition_id, "/${azurerm_role_definition.config_reader.role_definition_id}") if strcontains(k, "-plan/")])
     error_message = "Every plan identity must hold the config reader."
   }
 
   # These built-ins include */read, which covers Log Analytics queries.
   assert {
     condition = !anytrue([
-      for k, ra in azurerm_role_assignment.pipeline :
-      contains(["Reader", "Role Based Access Control Administrator", "Resource Policy Contributor"], ra.role_definition_name)
-      if !strcontains(k, "/spoke-join/")
+      for a in local.role_assignments :
+      contains(["Reader", "Role Based Access Control Administrator", "Resource Policy Contributor"], a.role)
     ])
     error_message = "No pipeline identity may hold Reader, Role Based Access Control Administrator or Resource Policy Contributor: use the custom twins."
   }
@@ -204,23 +300,13 @@ run "runner_roles_cannot_open_support_requests" {
     error_message = "The runner's readers may only read and query."
   }
 
-  # Level 4 may still remove the built-ins it granted before, but may no longer grant them.
+  # Level 4 swapped them for the custom readers on 2026-11-18, so it may neither grant nor remove them.
   assert {
     condition = alltrue([for k in ["azure-l4-apply/role-assigner/subscription", "azure-l4-apply/role-assigner/management"] :
-      !strcontains(split("roleAssignments/delete", azurerm_role_assignment.pipeline[k].condition)[0], "72fafb9e-0641-4937-9268-a91bfd8191a3") &&
-      !strcontains(split("roleAssignments/delete", azurerm_role_assignment.pipeline[k].condition)[0], "73c42c96-874c-492b-b04d-ab87d138a893")
+      !strcontains(azurerm_role_assignment.pipeline[k].condition, "72fafb9e-0641-4937-9268-a91bfd8191a3") &&
+      !strcontains(azurerm_role_assignment.pipeline[k].condition, "73c42c96-874c-492b-b04d-ab87d138a893")
     ])
-    error_message = "Level 4 must not be able to grant Cost Management Reader or Log Analytics Reader any more."
-  }
-
-  # Until level 4 has swapped them, it must still be able to remove its old grants. Remove this assert
-  # when the retiring list is emptied.
-  assert {
-    condition = (
-      strcontains(split("roleAssignments/delete", azurerm_role_assignment.pipeline["azure-l4-apply/role-assigner/subscription"].condition)[1], "72fafb9e-0641-4937-9268-a91bfd8191a3")
-      && strcontains(split("roleAssignments/delete", azurerm_role_assignment.pipeline["azure-l4-apply/role-assigner/management"].condition)[1], "73c42c96-874c-492b-b04d-ab87d138a893")
-    )
-    error_message = "Level 4 must be able to remove the built-in readers it granted before (retiring)."
+    error_message = "Level 4 must not be able to grant or remove Cost Management Reader or Log Analytics Reader."
   }
 }
 

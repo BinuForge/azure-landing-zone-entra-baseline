@@ -66,16 +66,21 @@
    management group (ADR-0010).
 7. The ops agent's runner holds no write action of any kind, including support requests. Cost Management
    Reader and Log Analytics Reader include `Microsoft.Support/*`, so the runner holds custom twins without
-   it: `lab-role-cost-reader` and `lab-role-log-reader`. A level may still remove roles it granted before
-   a change like this, but not grant them (`retiring` in `bootstrap/rbac.tf`).
+   it: `lab-role-cost-reader` and `lab-role-log-reader`. During such a change a level may still remove
+   the roles it granted before, but not grant them (`retiring` in `bootstrap/rbac.tf`). Level 4 swapped
+   its readers on 2026-11-18, so the list is empty.
+8. Every role bootstrap grants a pipeline identity is one row in `bootstrap/rbac.yaml`, keyed
+   `<identity>/<name>/<scope>`. A new grant is a reviewed line of data, not new Terraform. Custom roles
+   are assigned by ID, so an assignment never waits for a new role's name to propagate. The maintainer's
+   own access stays in `governance.tf` and `report_store.tf`, because it is a person, not a pipeline.
 
 The person-run bootstrap was chosen because, with one maintainer, a separate identity pipeline adds no
 separation of duties. It would only add a second automated path to Tier 0.
 
-## Roles, this week
+## Roles
 
-Scope "root" is the tenant root management group. Resource group names follow `docs/naming.md`, region
-`ae`.
+`bootstrap/rbac.yaml` is the source; this table explains each row. Scope "root" is the tenant root
+management group. Resource group names follow `docs/naming.md`, region `ae`.
 
 | Identity | Role | Scope | Why |
 |---|---|---|---|
@@ -123,7 +128,7 @@ Entra level identities need Microsoft Graph permissions and are added when the E
 |---|---|---|
 | The person running bootstrap holds User Access Administrator at root during the run | Someone has to create the first grants | Elevation switched on for the run only, then off; recorded in the runbook |
 | Bootstrap state holds identity and role details | It is in HCP with no secrets in it | Workspace access limited to the owners team |
-| A role assignment condition is written wrongly and allows more than intended | Conditions are new to most reviewers | A test tries to assign Owner with each constrained identity and expects 403 |
+| A role assignment condition is written wrongly and allows more than intended | Conditions are new to most reviewers | Bootstrap tests check that each condition names only its roles and never Owner or User Access Administrator. Not yet built: a live test that tries to assign Owner with each constrained identity and expects 403 |
 | The maintainer holds standing Azure grants as a user, not through PIM and a group | One maintainer, and a Global Administrator can elevate at any time anyway | Read by default, write on one management group, one two-action custom role; at a bank, PIM-eligible group assignments |
 
 ## Consequences

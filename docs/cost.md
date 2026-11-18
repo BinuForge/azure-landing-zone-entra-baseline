@@ -10,7 +10,7 @@ flag that defaults to `false`.
 | Monthly budget of USD 30, alerts at 50, 80 and 100 percent actual and 100 percent forecast | Deployed by bootstrap |
 | Costly flags default to `false` | `enable_prompt_logging` defaults to `false`, checked by level 3 tests. `enable_apim` is `true` only for the test sessions; `destroy.yml` removes it |
 | Nightly workflow resets costly flags to `false` | Not built: a flag changes only by pull request, and `destroy.yml` removes everything after a session |
-| `destroy.yml` workflow | Built: levels 2 and 3, then the leftovers check (docs/runbooks/destroy.md) |
+| `destroy.yml` workflow | Built: levels 4, 3 and 2, then the leftovers check (docs/runbooks/destroy.md) |
 | Log Analytics daily caps | 0.5 GB ops, 0.1 GB prompts: ingestion stops at the cap |
 | Always-on alert | The prompt query alert evaluates every 5 minutes: about USD 1.50 a month, not yet verified in the calculator |
 
@@ -45,5 +45,5 @@ Warn before a phase would take the total past **400**.
 | `azure/level-2-platform/management` | 4 | 1 Log Analytics workspace | 206 |
 | `azure/level-2-platform/connectivity` | 4 | 3 (hub VNet, 2 reserved subnets) | 209 |
 | `azure/level-2-platform/dns` | 4 | 6 (3 private DNS zones, 3 hub links) | 215 |
-| `azure/level-3-aiservices` | 5 | 43 (spoke VNet, 2 subnets, 2 NSGs, 2 NSG associations, 2 peerings, 3 zone links, account, project, private endpoint, guardrail, 1 model deployment, prompt workspace, 2 diagnostic settings, prompt query alert and its role, 11 APIM NSG rules, and 10 APIM resources while enable_apim is on) | 258 |
-| `azure/level-4-workloads/opsagent` | 5 | 7 (6 runner role assignments, canary NSG) | 265 |
+| `azure/level-3-aiservices` | 5 | 44 (spoke VNet, 2 subnets, 2 NSGs, 2 NSG associations, 2 peerings, 3 zone links, account, project, private endpoint, guardrail, 1 model deployment, prompt workspace, 2 diagnostic settings, prompt query alert and its role, 12 APIM NSG rules, and 10 APIM resources while enable_apim is on) | 259 |
+| `azure/level-4-workloads/opsagent` | 5 | 7 (6 runner role assignments, canary NSG) | 266 |

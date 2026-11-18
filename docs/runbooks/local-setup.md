@@ -27,6 +27,14 @@ gitleaks version      # 8.30.1
 checkov --version     # 3.3.30
 ```
 
+Homebrew's checkov can be a different version from CI's and report different results. To match CI, run
+the pinned version from a virtual environment:
+
+```sh
+python3 -m venv ~/.venvs/checkov && ~/.venvs/checkov/bin/pip install checkov==3.3.30
+~/.venvs/checkov/bin/checkov --directory . --framework terraform github_actions --quiet --compact
+```
+
 ## Hooks
 
 ```sh
@@ -55,3 +63,12 @@ terraform test
 ```
 
 `terraform test` uses mock providers, so it needs no sign-in.
+
+## Run the ops agent's tests
+
+Python 3.12 or later, standard library only, so nothing to install:
+
+```sh
+cd agents/opsagent
+python3 -B -m unittest discover -s tests -v
+```
