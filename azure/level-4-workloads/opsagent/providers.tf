@@ -9,5 +9,6 @@ provider "azurerm" {
 }
 
 # Reads lower levels' outputs only (ADR-0013). In a remote run the provider uses the run's own token,
-# which can read only the workspaces that share state with this one (tfc/workspaces.yaml, reads).
+# which can read only the workspaces that share state with this one (tfc/workspaces.yaml, reads). The
+# organisation comes from TFE_ORGANIZATION on the workspace's inputs variable set.
 provider "tfe" {}
