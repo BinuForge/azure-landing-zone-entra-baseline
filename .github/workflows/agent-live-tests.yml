@@ -6,7 +6,7 @@ name: agent-live-tests
 #   agent    lab-azure-l4-opsagent-run  two agent runs (canary, hostile request), refused writes, the
 #                                       prompt workspace, and the run ID through the logs
 #   roles    lab-azure-l0-plan          Reader everywhere: every role the runner holds
-#   outside  no environment             cannot sign in as the runner
+#   outside  lab-azure-l0-plan          any branch, as a PR plan runs: cannot sign in as the runner
 #
 # Results hold pass or fail, counts and role names only. Needs enable_apim = true in level 3 and level 4
 # applied. Takes up to 25 minutes, most of it waiting for logs (T-13).
@@ -102,11 +102,13 @@ jobs:
         if: ${{ !cancelled() }}
         run: echo "results=$(jq -c . "$RUNNER_TEMP/results.json" || echo null)" >> "$GITHUB_OUTPUT"
 
-  # No environment on purpose: this job's GitHub token must not be accepted as the runner (T-07).
+  # Another pipeline's environment, which accepts any branch: its GitHub token must not be accepted as the
+  # runner (T-07). It also holds the tenant ID, which a job with no environment does not get.
   outside:
     needs: agent
     if: ${{ !cancelled() && needs.agent.outputs.client_id != '' }}
     runs-on: ubuntu-24.04
+    environment: lab-azure-l0-plan
     permissions:
       contents: read
       id-token: write

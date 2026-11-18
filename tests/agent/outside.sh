@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Tries to sign in as the ops agent's runner from a job outside its environment (threat model T-07). The
+# Tries to sign in as the ops agent's runner from another environment's job (threat model T-07). The
 # runner's federated credential trusts one subject, this repository's lab-azure-l4-opsagent-run
-# environment, and the environment accepts main only. So the job's own GitHub token, whose subject names a
-# branch and no environment, must be refused by Entra.
+# environment, and that environment accepts main only. The workflow runs this in lab-azure-l0-plan, which
+# accepts any branch, as a pull request's plan would: its GitHub token names that environment, so Entra
+# must refuse it.
 #
-# Needs a job with `id-token: write` and `actions: read`, and no environment.
+# Needs a job with `id-token: write` and `actions: read`.
 #
 #   AZURE_TENANT_ID=<id> RUNNER_CLIENT_ID=<id> GH_TOKEN=<token> bash tests/agent/outside.sh results.json
 set -euo pipefail
@@ -36,7 +37,7 @@ else
   actual="AADSTS${actual:-error $code}"
 fi
 : > "$BODY"
-record T-07a C-10 "A job outside the runner's environment cannot sign in as the runner" AADSTS700213 "$actual" \
+record T-07a C-10 "A job in another environment cannot sign in as the runner" AADSTS700213 "$actual" \
   "job subject ${subject:-unknown}"
 
 policy="$(gh api "repos/$REPO/environments/lab-azure-l4-opsagent-run" --jq .deployment_branch_policy)"

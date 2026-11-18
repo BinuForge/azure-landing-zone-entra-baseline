@@ -142,7 +142,7 @@ most, from people who can write tags, names, log lines or plans into data the mo
 | C-19 | Maximum tool calls per run; the runner stops and reports when it is reached | Runner |
 | C-20 | Kill switch: one action disables the APIM product or the role assignment and stops all model traffic | Runbook, Terraform |
 | C-21 | Every figure in a report must appear in a tool result; the runner checks this before saving | Runner |
-| C-22 | The runner sends the GitHub run ID as `x-correlation-id`. The gateway logs it beside its own request ID, which it sends on to Foundry as `x-ms-client-request-id` | Runner, APIM policy |
+| C-22 | The runner sends the GitHub run ID as `x-correlation-id`. The gateway logs it beside its own request ID, which it sends on to Foundry as `x-ms-client-request-id`. Foundry's usage log records neither, so a Foundry record is joined to its gateway call by time | Runner, APIM policy |
 | C-23 | The runner uses the Python standard library only, so nothing is installed; Dependabot for actions and providers | Runner, Dependabot |
 | C-24 | Azure Policy denies deployments without the approved guardrail policy, and models outside an allowlist | Terraform, level 1 |
 | C-25 | Drift detection on the AI services workspace | Workflow |
@@ -166,7 +166,7 @@ and T-13 run in `agent-live-tests.yml` (`tests/agent/`). T-14 is in the level 1 
 | T-10 | Query the prompt workspace with the runner identity | 403; the alert fires for a permitted query |
 | T-11 | Send requests past the token limit | 429 |
 | T-12 | Compare every figure in a report with the raw tool output | All match |
-| T-13 | Follow one run ID from GitHub through APIM to Foundry logs | The gateway log holds the run ID and the request ID it sent on, and Foundry's log holds that request ID |
+| T-13 | Follow one run ID from GitHub through APIM to Foundry logs | The gateway log holds the run ID and the request ID it sent on, and Foundry's usage log holds a record for every gateway call, by ID or, failing that, by time |
 | T-14 | Try to deploy a model without the guardrail, and an unlisted model | Both denied by policy |
 | T-15 | Use the kill switch during a run, timing it | Model calls fail within 60 seconds |
 
@@ -176,6 +176,7 @@ and T-13 run in `agent-live-tests.yml` (`tests/agent/`). T-14 is in the level 1 
 |---|---|---|
 | 2026-11-18 | Prompt Shields did not block the planted instructions when they arrived in a tool result. The model reported them as suspicious and did not follow them, and the sanitiser removed the planted image | C-02 is no longer relied on; C-01, C-13 and the system prompt carry TM-01 |
 | 2026-11-18 | No gateway log had ever reached the ops workspace. APIM sends logs to an ingestion host outside the AzureMonitor tag, and the subnet's deny rule dropped them, so C-22 never held | The subnet may reach Azure on 443 (ADR-0008, PR #49) |
+| 2026-11-18 | Foundry's usage log carries its own correlation ID only: the request ID the gateway sends is not recorded anywhere in it (T-13c, `agent-live-tests` run 44290489055) | T-13 joins the Foundry hop by time, which holds only while one caller uses the gateway. At bank scale the gateway's own LLM logs, which record tokens per gateway request, would close the gap; whether they can do so without logging prompt content is TODO (ADR-0010) |
 | 2026-11-18 | Within an hour of the first gateway logs, they showed internet scanners probing the gateway (`/robots.txt`, `/login`, the portal host). All got 404 or 401 | None needed: the gateway is public by design, and identity, not network position, keeps them out (ADR-0008) |
 
 ## 8. What a bank would add
