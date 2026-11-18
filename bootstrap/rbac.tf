@@ -29,14 +29,22 @@ locals {
   }
 
   # A level may assign only these roles, and only to service principals (ADR-0012, decision 3). Log
-  # Analytics Reader is allowed on the management group only, so no level can grant read on the prompt
-  # workspace (ADR-0010).
+  # Analytics Reader and the log reader are allowed on the management group only, so no level can grant
+  # read on the prompt workspace (ADR-0010).
   delegations = {
     l3 = [local.role_ids.cognitive_services_user]
-    # Level 3's prompt-query alert reads the ops workspace with its own identity (threat model C-16).
+    # Level 3's prompt-query alert reads the ops workspace with its own identity (threat model C-16). That
+    # identity belongs to the alert rule, so nothing can steer it into opening support requests.
     l3-management = [local.role_ids.log_analytics_reader]
-    l4            = [azurerm_role_definition.config_reader.role_definition_id, local.role_ids.cost_management_reader]
+    l4            = [azurerm_role_definition.config_reader.role_definition_id, azurerm_role_definition.cost_reader.role_definition_id]
     # The runner reads the ops workspace (threat model C-06).
+    l4-management = [azurerm_role_definition.log_reader.role_definition_id]
+  }
+
+  # Roles a level may remove but no longer grant, so it can retire its own earlier grants. Empty these
+  # once level 4 has applied the custom readers.
+  retiring = {
+    l4            = [local.role_ids.cost_management_reader]
     l4-management = [local.role_ids.log_analytics_reader]
   }
 
@@ -60,7 +68,7 @@ locals {
        )
        OR
        (
-        @Resource[Microsoft.Authorization/roleAssignments:RoleDefinitionId] ForAnyOfAnyValues:GuidEquals {${join(", ", roles)}}
+        @Resource[Microsoft.Authorization/roleAssignments:RoleDefinitionId] ForAnyOfAnyValues:GuidEquals {${join(", ", concat(roles, lookup(local.retiring, level, [])))}}
        )
       )
     EOT
@@ -93,6 +101,48 @@ locals {
     "azure-l4-apply/role-assigner/subscription"       = { identity = "azure-l4-apply", role = "custom:role-assigner", scope = local.subscription_scope, condition = "l4" }
     "azure-l4-apply/role-assigner/management"         = { identity = "azure-l4-apply", role = "custom:role-assigner", scope = local.rg.management, condition = "l4-management" }
   }
+}
+
+# The runner's cost and log readers. Cost Management Reader and Log Analytics Reader both include
+# Microsoft.Support/*, which opens and changes support requests: a write. A read-only identity that
+# processes data an attacker can influence holds the same reads without it (threat model T-02).
+resource "azurerm_role_definition" "cost_reader" {
+  name        = "${var.prefix}-role-cost-reader"
+  scope       = local.root_scope
+  description = "Cost Management Reader without support requests. Created by bootstrap, ADR-0012."
+
+  permissions {
+    actions = [
+      "Microsoft.Consumption/*/read",
+      "Microsoft.CostManagement/*/read",
+      "Microsoft.Billing/billingPeriods/read",
+      "Microsoft.Billing/billingProperty/read",
+      "Microsoft.Resources/subscriptions/read",
+      "Microsoft.Resources/subscriptions/resourceGroups/read",
+      "Microsoft.Advisor/configurations/read",
+      "Microsoft.Advisor/recommendations/read",
+      "Microsoft.Management/managementGroups/read",
+    ]
+  }
+
+  assignable_scopes = [local.root_scope]
+}
+
+resource "azurerm_role_definition" "log_reader" {
+  name        = "${var.prefix}-role-log-reader"
+  scope       = local.root_scope
+  description = "Log Analytics Reader without support requests. Created by bootstrap, ADR-0012."
+
+  permissions {
+    actions = [
+      "*/read",
+      "Microsoft.OperationalInsights/workspaces/analytics/query/action",
+      "Microsoft.OperationalInsights/workspaces/search/action",
+    ]
+    not_actions = ["Microsoft.OperationalInsights/workspaces/sharedKeys/read"]
+  }
+
+  assignable_scopes = [local.root_scope]
 }
 
 # Lets the AI services spoke peer with the hub and use the hub's DNS zones without owning either.

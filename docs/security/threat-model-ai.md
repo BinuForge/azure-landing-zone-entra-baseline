@@ -126,7 +126,7 @@ most, from people who can write tags, names, log lines or plans into data the mo
 | C-03 | No write tools exist. Suggestions are text; changes only reach Azure through a pull request, the PR gates and a person | Runner, ADR-0006 |
 | C-04 | A person reads every suggestion before acting on it | Process |
 | C-05 | The runner exposes a fixed list of named, parameterised queries. Parameters are validated; unknown tools are refused and logged | Runner |
-| C-06 | Runner identity: config reader (Reader without log reads) on lab resource groups, Cost Management Reader, Log Analytics Reader on the ops workspace only. No Key Vault data access, no prompt workspace | Terraform, level 4 |
+| C-06 | Runner identity: config reader (Reader without log reads) on lab resource groups, cost reader on the subscription, log reader on the ops workspace only. The cost and log readers are the built-ins without `Microsoft.Support/*`, so the runner holds no write action at all. No Key Vault data access, no prompt workspace | Terraform, bootstrap and level 4 |
 | C-07 | Local (key) authentication disabled on Foundry | Terraform, enforced by policy |
 | C-08 | Public network access disabled on Foundry; private endpoint only | Terraform, enforced by policy |
 | C-09 | Only the APIM managed identity holds a data-plane role on Foundry | Terraform, level 3 |
