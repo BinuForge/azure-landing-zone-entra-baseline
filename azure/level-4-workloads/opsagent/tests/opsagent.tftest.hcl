@@ -51,12 +51,12 @@ run "runner_queries_only_the_ops_workspace" {
 
   assert {
     condition     = endswith(azurerm_role_assignment.runner_ops_logs.scope, "/workspaces/lab-log-management-prd-ae")
-    error_message = "Log Analytics Reader must be on the ops workspace and nowhere else (T-10)."
+    error_message = "The log reader must be on the ops workspace and nowhere else (T-10)."
   }
 
   assert {
     condition     = azurerm_role_assignment.runner_cost_reader.scope == "/subscriptions/00000000-0000-0000-0000-000000000000"
-    error_message = "Cost Management Reader belongs at the subscription, where cost data lives."
+    error_message = "The cost reader belongs at the subscription, where cost data lives."
   }
 }
 
@@ -67,8 +67,8 @@ run "runner_holds_no_write_role" {
     condition = alltrue([for name in concat(
       [for ra in azurerm_role_assignment.runner_config_reader : ra.role_definition_name],
       [azurerm_role_assignment.runner_cost_reader.role_definition_name, azurerm_role_assignment.runner_ops_logs.role_definition_name],
-    ) : contains(["lab-role-config-reader", "Cost Management Reader", "Log Analytics Reader"], name)])
-    error_message = "The runner may hold read roles only (T-02)."
+    ) : contains(["lab-role-config-reader", "lab-role-cost-reader", "lab-role-log-reader"], name)])
+    error_message = "The runner may hold only bootstrap's read roles; the built-in cost and log readers can open support requests (T-02)."
   }
 
   assert {

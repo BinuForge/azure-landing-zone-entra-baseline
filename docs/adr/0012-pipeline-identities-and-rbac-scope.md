@@ -64,6 +64,10 @@
    `lab-role-role-assigner` and `lab-role-policy-writer`. Contributor stays where an apply identity owns a
    workspace: it could redirect the logs anyway. No level may delegate Log Analytics Reader outside the
    management group (ADR-0010).
+7. The ops agent's runner holds no write action of any kind, including support requests. Cost Management
+   Reader and Log Analytics Reader include `Microsoft.Support/*`, so the runner holds custom twins without
+   it: `lab-role-cost-reader` and `lab-role-log-reader`. A level may still remove roles it granted before
+   a change like this, but not grant them (`retiring` in `bootstrap/rbac.tf`).
 
 The person-run bootstrap was chosen because, with one maintainer, a separate identity pipeline adds no
 separation of duties. It would only add a second automated path to Tier 0.
@@ -92,8 +96,8 @@ Scope "root" is the tenant root management group. Resource group names follow `d
 | `lab-azure-l3-apply` | Custom `lab-role-soft-delete-purger`: read and purge soft-deleted APIM services and AI accounts only | subscription | Purging is a subscription-level action; without it a teardown leaves names reserved |
 | `lab-azure-l4-plan` | Custom `lab-role-config-reader` | subscription | HCP dynamic credentials, `run_phase:plan`. Plans read the runner's role assignments, which sit at several scopes |
 | `lab-azure-l4-apply` | Contributor | ops agent group | HCP dynamic credentials, `run_phase:apply` |
-| `lab-azure-l4-apply` | Custom `lab-role-role-assigner`, condition: may assign only the config reader and Cost Management Reader, and only to service principals | subscription | Give the runner identity its read roles |
-| `lab-azure-l4-apply` | Custom `lab-role-role-assigner`, condition: may assign only Log Analytics Reader, and only to service principals | management group (resource group) | Give the runner read on the ops workspace (threat model C-06) |
+| `lab-azure-l4-apply` | Custom `lab-role-role-assigner`, condition: may assign only the config reader and the cost reader (Cost Management Reader without support requests, decision 7), and only to service principals | subscription | Give the runner identity its read roles |
+| `lab-azure-l4-apply` | Custom `lab-role-role-assigner`, condition: may assign only the log reader (Log Analytics Reader without support requests), and only to service principals | management group (resource group) | Give the runner read on the ops workspace (threat model C-06) |
 | `lab-azure-l4-opsagent-run` | Custom `lab-role-report-writer`: blob write and add only, no read, list or delete | report store container | The ops agent's runner adds reports (ADR-0015). Its read roles come from level 4 (threat model C-06) |
 
 Moving a subscription needs `roleAssignments/write` and `delete` on it, which in practice means Owner

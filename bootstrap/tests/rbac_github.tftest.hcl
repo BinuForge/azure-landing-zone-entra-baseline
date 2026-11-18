@@ -183,9 +183,44 @@ run "no_level_can_grant_read_on_the_prompt_workspace" {
   assert {
     condition = (
       strcontains(azurerm_role_assignment.pipeline["azure-l4-apply/role-assigner/subscription"].condition, azurerm_role_definition.config_reader.role_definition_id)
-      && strcontains(azurerm_role_assignment.pipeline["azure-l4-apply/role-assigner/management"].condition, "73c42c96-874c-492b-b04d-ab87d138a893")
+      && strcontains(azurerm_role_assignment.pipeline["azure-l4-apply/role-assigner/management"].condition, azurerm_role_definition.log_reader.role_definition_id)
     )
-    error_message = "Level 4 grants the runner the config reader at subscription and Log Analytics Reader on the management group only."
+    error_message = "Level 4 grants the runner the config reader at subscription and the log reader on the management group only."
+  }
+}
+
+run "runner_roles_cannot_open_support_requests" {
+  command = plan
+
+  assert {
+    condition = alltrue([for r in [azurerm_role_definition.cost_reader, azurerm_role_definition.log_reader] :
+    !anytrue([for a in one(r.permissions).actions : startswith(lower(a), "microsoft.support/") || a == "*"])])
+    error_message = "The runner's readers must not include Microsoft.Support/*: opening a support request is a write (T-02)."
+  }
+
+  assert {
+    condition = alltrue([for r in [azurerm_role_definition.cost_reader, azurerm_role_definition.log_reader] :
+    alltrue([for a in one(r.permissions).actions : endswith(a, "/read") || endswith(a, "/query/action") || endswith(a, "/search/action")])])
+    error_message = "The runner's readers may only read and query."
+  }
+
+  # Level 4 may still remove the built-ins it granted before, but may no longer grant them.
+  assert {
+    condition = alltrue([for k in ["azure-l4-apply/role-assigner/subscription", "azure-l4-apply/role-assigner/management"] :
+      !strcontains(split("roleAssignments/delete", azurerm_role_assignment.pipeline[k].condition)[0], "72fafb9e-0641-4937-9268-a91bfd8191a3") &&
+      !strcontains(split("roleAssignments/delete", azurerm_role_assignment.pipeline[k].condition)[0], "73c42c96-874c-492b-b04d-ab87d138a893")
+    ])
+    error_message = "Level 4 must not be able to grant Cost Management Reader or Log Analytics Reader any more."
+  }
+
+  # Until level 4 has swapped them, it must still be able to remove its old grants. Remove this assert
+  # when the retiring list is emptied.
+  assert {
+    condition = (
+      strcontains(split("roleAssignments/delete", azurerm_role_assignment.pipeline["azure-l4-apply/role-assigner/subscription"].condition)[1], "72fafb9e-0641-4937-9268-a91bfd8191a3")
+      && strcontains(split("roleAssignments/delete", azurerm_role_assignment.pipeline["azure-l4-apply/role-assigner/management"].condition)[1], "73c42c96-874c-492b-b04d-ab87d138a893")
+    )
+    error_message = "Level 4 must be able to remove the built-in readers it granted before (retiring)."
   }
 }
 
