@@ -54,7 +54,8 @@ python3 -B -m unittest discover -s tests -v
 ```
 
 The tests use fake Azure and gateway answers, including the same planted attacks as the level 4 canary,
-and run in the PR gates as `agent-tests`.
+and run in the PR gates as `agent-tests`. The same controls are then tested on the live lab by
+`agent-live-tests.yml` (`tests/agent/`).
 
 ## Run the agent
 

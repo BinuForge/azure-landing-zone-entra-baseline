@@ -51,8 +51,10 @@ def _safe_name(value: Any) -> str:
 
 
 class Agent:
-    def __init__(self, cfg: Config, client: Client, gateway: Gateway, log=print):
+    def __init__(self, cfg: Config, client: Client, gateway: Gateway, log=print, request: Optional[str] = None):
         self.cfg = cfg
+        # Only the live tests change the request, to try a hostile one (T-03); a run always uses the default.
+        self.request = request or f"Write the report for the last {cfg.days} days."
         self.client = client
         self.gateway = gateway
         self.redactor = Redactor(cfg.subscription_id, cfg.tenant_id)
@@ -73,7 +75,7 @@ class Agent:
         outcome = Outcome(narrative=None, withheld=None)
         messages: List[Dict[str, Any]] = [
             {"role": "system", "content": SYSTEM_PROMPT.read_text()},
-            {"role": "user", "content": f"Write the report for the last {self.cfg.days} days."},
+            {"role": "user", "content": self.request},
         ]
         specs = [t.spec() for t in TOOLS.values()]
         model_calls = 0

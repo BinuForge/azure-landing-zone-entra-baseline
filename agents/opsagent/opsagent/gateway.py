@@ -46,7 +46,7 @@ class Gateway:
                 url,
                 self._cfg.gateway_audience,
                 body=body,
-                # The run ID travels through APIM to Foundry and into every log (C-22).
+                # The gateway logs the run ID beside the request ID it sends on to Foundry (C-22).
                 headers={"x-correlation-id": self._cfg.run_id},
                 retries_on_429=3,
             )

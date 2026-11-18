@@ -1,0 +1,155 @@
+name: agent-live-tests
+
+# Tests the ops agent's controls on the live lab (docs/security/threat-model-ai.md, tests/README.md). Each
+# job runs as the identity whose access it tests:
+#
+#   agent    lab-azure-l4-opsagent-run  two agent runs (canary, hostile request), refused writes, the
+#                                       prompt workspace, and the run ID through the logs
+#   roles    lab-azure-l0-plan          Reader everywhere: every role the runner holds
+#   outside  no environment             cannot sign in as the runner
+#
+# Results hold pass or fail, counts and role names only. Needs enable_apim = true in level 3 and level 4
+# applied. Takes up to 25 minutes, most of it waiting for logs (T-13).
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+# Never alongside the gateway tests or the ops agent: all three share the caller's token limit.
+concurrency:
+  group: ai-gateway
+  cancel-in-progress: false
+
+jobs:
+  agent:
+    runs-on: ubuntu-24.04
+    environment: lab-azure-l4-opsagent-run
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      results: ${{ steps.results.outputs.results }}
+      client_id: ${{ steps.runner.outputs.client_id }}
+      object_id: ${{ steps.runner.outputs.object_id }}
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Sign in with OIDC
+        run: bash .github/scripts/az-login-oidc.sh
+
+      # For the other jobs: the client ID for the sign-in attempt, the object ID for the role list.
+      - name: Runner
+        id: runner
+        run: |
+          oid="$(az account get-access-token --query accessToken -o tsv \
+            | python3 -c 'import base64, json, sys; p = sys.stdin.read().split(".")[1]; print(json.loads(base64.urlsafe_b64decode(p + "=" * (-len(p) % 4)))["oid"])')"
+          echo "client_id=$AZURE_CLIENT_ID" >> "$GITHUB_OUTPUT"
+          echo "object_id=$oid" >> "$GITHUB_OUTPUT"
+
+      - name: Agent runs
+        run: python3 -B tests/agent/live.py "$RUNNER_TEMP/live.json"
+
+      - name: Access
+        if: ${{ !cancelled() }}
+        run: bash tests/agent/access.sh "$RUNNER_TEMP/access.json"
+
+      - name: Trace
+        if: ${{ !cancelled() }}
+        run: bash tests/agent/trace.sh "$RUNNER_TEMP/trace.json"
+
+      - name: Results
+        id: results
+        if: ${{ !cancelled() }}
+        run: |
+          shopt -s nullglob
+          files=("$RUNNER_TEMP"/{live,access,trace}.json)
+          echo "results=$(jq -cs '{cases: [.[].cases[]]}' "${files[@]}" || echo null)" >> "$GITHUB_OUTPUT"
+
+  roles:
+    needs: agent
+    if: ${{ !cancelled() && needs.agent.outputs.object_id != '' }}
+    runs-on: ubuntu-24.04
+    environment: lab-azure-l0-plan
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      results: ${{ steps.results.outputs.results }}
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Sign in with OIDC
+        run: bash .github/scripts/az-login-oidc.sh
+      # Set on this step only, so the object ID appears in one step's log header, not every step's.
+      - name: Test
+        env:
+          RUNNER_OBJECT_ID: ${{ needs.agent.outputs.object_id }}
+        run: bash tests/agent/roles.sh "$RUNNER_TEMP/results.json"
+      - name: Results
+        id: results
+        if: ${{ !cancelled() }}
+        run: echo "results=$(jq -c . "$RUNNER_TEMP/results.json" || echo null)" >> "$GITHUB_OUTPUT"
+
+  # No environment on purpose: this job's GitHub token must not be accepted as the runner (T-07).
+  outside:
+    needs: agent
+    if: ${{ !cancelled() && needs.agent.outputs.client_id != '' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      actions: read # the environment's branch policy
+    outputs:
+      results: ${{ steps.results.outputs.results }}
+    env:
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      RUNNER_CLIENT_ID: ${{ needs.agent.outputs.client_id }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test
+        run: bash tests/agent/outside.sh "$RUNNER_TEMP/results.json"
+      - name: Results
+        id: results
+        if: ${{ !cancelled() }}
+        run: echo "results=$(jq -c . "$RUNNER_TEMP/results.json" || echo null)" >> "$GITHUB_OUTPUT"
+
+  report:
+    needs: [agent, roles, outside]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    permissions: {}
+    steps:
+      - name: Combine
+        env:
+          AGENT: ${{ needs.agent.outputs.results }}
+          ROLES: ${{ needs.roles.outputs.results }}
+          OUTSIDE: ${{ needs.outside.outputs.results }}
+        run: |
+          jq -n --argjson a "${AGENT:-null}" --argjson r "${ROLES:-null}" --argjson o "${OUTSIDE:-null}" '
+            [$a, $r, $o] | map(select(. != null)) as $jobs | [$jobs[].cases[]] as $cases
+            | {jobs_reported: ($jobs | length), total: ($cases | length),
+               passed: ([$cases[] | select(.pass)] | length), cases: $cases}' > results.json
+          {
+            echo "| Test | Result | What | Got | Detail |"
+            echo "|---|---|---|---|---|"
+            jq -r '.cases[] | "| \(.id) | \(if .pass then "PASS" else "FAIL" end) | \(.what) | \(.actual) | \(.detail) |"' results.json
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # A missing job or a failed case fails the run, so it is seen.
+      - name: All agent tests passed
+        run: jq -e '.jobs_reported == 3 and .passed == .total' results.json
