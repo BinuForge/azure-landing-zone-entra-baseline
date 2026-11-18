@@ -12,7 +12,11 @@ locals {
   kill_switch_name = "ai-kill-switch"
 
   # Traffic APIM needs in a VNet, and nothing else. Outbound internet is denied apart from port 80 for
-  # certificate revocation checks.
+  # certificate revocation checks, and 443 to Azure for log ingestion. APIM sends gateway logs to
+  # gcs.prod.warm.ingestion.monitoring.azure.com, which sits outside the AzureMonitor tag, so with the deny
+  # rule alone no gateway log ever arrived (found while building T-13). A network security group cannot
+  # name a host, so the narrowest rule it can express is the AzureCloud tag. At a bank, egress goes
+  # through the hub firewall, which allows that host by name (ADR-0008).
   apim_nsg_rules = {
     "allow-clients-https"    = { priority = 100, direction = "Inbound", source = "Internet", destination = "VirtualNetwork", ports = ["443"] }
     "allow-apim-management"  = { priority = 110, direction = "Inbound", source = "ApiManagement", destination = "VirtualNetwork", ports = ["3443"] }
@@ -22,6 +26,7 @@ locals {
     "allow-key-vault"        = { priority = 120, direction = "Outbound", source = "VirtualNetwork", destination = "AzureKeyVault", ports = ["443"] }
     "allow-monitor"          = { priority = 130, direction = "Outbound", source = "VirtualNetwork", destination = "AzureMonitor", ports = ["443", "1886"] }
     "allow-entra"            = { priority = 140, direction = "Outbound", source = "VirtualNetwork", destination = "AzureActiveDirectory", ports = ["443"] }
+    "allow-monitor-ingest"   = { priority = 145, direction = "Outbound", source = "VirtualNetwork", destination = "AzureCloud", ports = ["443"] }
     "allow-foundry-endpoint" = { priority = 150, direction = "Outbound", source = "VirtualNetwork", destination = local.subnets.privateendpoints, ports = ["443"] }
     "allow-certificate-crl"  = { priority = 160, direction = "Outbound", source = "VirtualNetwork", destination = "Internet", ports = ["80"] }
     "deny-internet-outbound" = { priority = 4000, direction = "Outbound", source = "VirtualNetwork", destination = "Internet", ports = ["*"], access = "Deny" }

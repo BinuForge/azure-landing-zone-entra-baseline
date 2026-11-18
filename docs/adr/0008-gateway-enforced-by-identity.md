@@ -40,6 +40,7 @@ test for it is simple: call Foundry directly and expect 403 (T-04).
 | APIM is a single point of failure, and the Developer tier has no SLA | A lab, used in short sessions | At a bank: a tier with zone redundancy and an SLA |
 | A compromised APIM managed identity has full model access | It only exists inside APIM | Token limits bound the damage; drift detection flags new role assignments |
 | A subscription Owner can grant another identity a role | Owners can do anything in the subscription | T-04 runs after every deploy; drift detection on role assignments |
+| The APIM subnet can reach any Azure address on 443, not only Azure Monitor. APIM sends gateway logs to an ingestion host outside the AzureMonitor tag, and a network security group cannot allow a host by name | APIM runs only Microsoft's code and this repo's policy, and the policy sends requests nowhere but Foundry. Without the rule, no gateway log arrives (found while building T-13, 2026-11-18) | At a bank: a route table sends the subnet's egress to the hub firewall, which allows the monitoring hosts by name and nothing else on Azure |
 
 ## Consequences
 

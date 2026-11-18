@@ -28,9 +28,10 @@
     </validate-jwt>
     <!-- Per-caller token limit (C-18), keyed on the calling application. -->
     <llm-token-limit counter-key="@(context.Request.Headers.GetValueOrDefault(&quot;Authorization&quot;,&quot;&quot;).AsJwt()?.Claims.GetValueOrDefault(&quot;appid&quot;, &quot;unknown&quot;))" tokens-per-minute="${tokens_per_minute}" estimate-prompt-tokens="false" remaining-tokens-header-name="x-ratelimit-remaining-tokens" />
-    <!-- One correlation ID from caller to model logs (C-22). -->
+    <!-- Run ID to model logs (C-22): the gateway log holds the caller's x-correlation-id and this request's
+         ID, and the request ID goes on to Foundry. Azure expects a GUID here, which a run ID is not. -->
     <set-header name="x-ms-client-request-id" exists-action="override">
-      <value>@(context.Request.Headers.GetValueOrDefault("x-correlation-id", context.RequestId.ToString()))</value>
+      <value>@(context.RequestId.ToString())</value>
     </set-header>
     <!-- Swap the caller's token for APIM's managed identity: only APIM holds a role on Foundry. -->
     <set-header name="Authorization" exists-action="delete" />
