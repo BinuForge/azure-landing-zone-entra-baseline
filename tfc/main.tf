@@ -21,6 +21,10 @@ locals {
     }
   ]...)
 
+  # Inputs the YAML can name: the tenant-specific values plus the organisation, which level 4's remote
+  # runs need for tfe_outputs and do not get from the GitHub workflow.
+  variable_set_inputs = merge(var.variable_set_inputs, { hcp_organization = var.organization })
+
   variable_set_variables = merge([
     for set_key, set in local.variable_sets : {
       for var_key, v in set.variables : "${set_key}/${var_key}" => merge(v, { set = set_key, key = var_key })
@@ -107,8 +111,8 @@ resource "tfe_variable" "this" {
   variable_set_id = tfe_variable_set.this[each.value.set].id
   key             = each.value.key
   category        = each.value.category
-  # A variable either has a literal value or names an entry in var.variable_set_inputs.
-  value       = try(each.value.value, var.variable_set_inputs[each.value.input])
+  # A variable either has a literal value or names an entry in local.variable_set_inputs.
+  value       = try(each.value.value, local.variable_set_inputs[each.value.input])
   description = try(each.value.description, null)
   sensitive   = false
 }

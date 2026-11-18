@@ -101,6 +101,20 @@ run "variable_sets_attach_and_resolve_inputs" {
   }
 }
 
+run "level_4_remote_runs_know_their_organisation" {
+  command = plan
+
+  assert {
+    condition     = tfe_variable.this["azure-opsagent-inputs/TFE_ORGANIZATION"].value == "example-org"
+    error_message = "Level 4 runs remotely and needs TFE_ORGANIZATION from its variable set for tfe_outputs."
+  }
+
+  assert {
+    condition     = tfe_variable.this["azure-opsagent-inputs/TFE_ORGANIZATION"].category == "env"
+    error_message = "TFE_ORGANIZATION must be an environment variable for the tfe provider to read it."
+  }
+}
+
 run "level_4_gets_separate_plan_and_apply_identities" {
   command = plan
 

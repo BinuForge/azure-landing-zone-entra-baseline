@@ -154,3 +154,7 @@ variable_sets:
         category: terraform
         input: opsagent_runner_object_id
         description: Object ID of lab-azure-l4-opsagent-run (bootstrap output). Level 4 grants it read roles.
+      TFE_ORGANIZATION:
+        category: env
+        input: hcp_organization
+        description: Organisation for tfe_outputs. Remote runs do not get the workflow's environment.
