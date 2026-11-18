@@ -19,7 +19,7 @@ an attacker can influence.
 
 | Ability | Built this week | What it reads |
 |---|---|---|
-| Estate and FinOps report | Yes | Resource Graph, Advisor, Cost Management |
+| Estate and FinOps report | Yes | Resources in the lab groups, Advisor, Cost Management, ops log ingestion |
 | Plan reviewer | Designed | Terraform plan JSON from pull requests |
 | Troubleshooter | Designed | Ops Log Analytics workspace |
 
@@ -143,7 +143,7 @@ most, from people who can write tags, names, log lines or plans into data the mo
 | C-20 | Kill switch: one action disables the APIM product or the role assignment and stops all model traffic | Runbook, Terraform |
 | C-21 | Every figure in a report must appear in a tool result; the runner checks this before saving | Runner |
 | C-22 | The GitHub run ID travels as a header through APIM to Foundry and appears in every log | Runner, APIM policy |
-| C-23 | Python dependencies installed with `--require-hashes`; Dependabot for Python, actions and providers | Runner, Dependabot |
+| C-23 | The runner uses the Python standard library only, so nothing is installed; Dependabot for actions and providers | Runner, Dependabot |
 | C-24 | Azure Policy denies deployments without the approved guardrail policy, and models outside an allowlist | Terraform, level 1 |
 | C-25 | Drift detection on the AI services workspace | Workflow |
 

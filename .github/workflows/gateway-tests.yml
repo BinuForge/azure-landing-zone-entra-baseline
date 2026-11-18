@@ -4,7 +4,7 @@ name: gateway-tests
 # as the identity whose access it tests, so a result shows what that identity can really do:
 #
 #   identity     lab-azure-l0-plan          Reader everywhere, no AI.Invoke: who holds which role
-#   caller       lab-azure-l4-opsagent-run  the only AI.Invoke holder, with no Azure role: calls the gateway
+#   caller       lab-azure-l4-opsagent-run  the only AI.Invoke holder: calls the gateway
 #   kill-switch  lab-azure-l3-apply         owns the gateway, so it waits for approval: the kill switch
 #
 # Results are redacted, scanned and attested like an evidence pack (ADR-0011); a person brings them in
@@ -20,9 +20,9 @@ on:
 
 permissions: {}
 
-# Never alongside another run: the token limit and the kill switch would interfere.
+# Never alongside another run or the ops agent: the token limit and the kill switch would interfere.
 concurrency:
-  group: gateway-tests
+  group: ai-gateway
   cancel-in-progress: false
 
 jobs:
@@ -77,7 +77,7 @@ jobs:
     env:
       AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      # No subscription: the runner holds no Azure role, only AI.Invoke on the gateway.
+      # No subscription: these cases only call the gateway and the model endpoint.
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

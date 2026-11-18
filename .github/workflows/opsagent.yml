@@ -1,0 +1,50 @@
+name: opsagent
+
+# The ops agent (agents/opsagent/README.md, docs/security/threat-model-ai.md). It runs as
+# lab-azure-l4-opsagent-run, whose environment accepts main only (C-10), and holds read roles from level 4
+# plus AI.Invoke on the gateway. The full report goes to the private report store (ADR-0015); this run's
+# page shows counts only. Needs enable_apim = true in level 3 and level 4 applied.
+# checkov:skip=CKV_GHA_7:Not a build. The only input is a number of days, which the runner validates.
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: Days of cost and log data to cover (1 to 31).
+        type: number
+        default: 7
+        required: true
+
+permissions: {}
+
+# Never alongside the gateway tests: both use the same caller's token limit.
+concurrency:
+  group: ai-gateway
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-24.04
+    environment: lab-azure-l4-opsagent-run
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      OPSAGENT_DAYS: ${{ inputs.days }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Sign in with OIDC
+        run: bash .github/scripts/az-login-oidc.sh
+
+      # The image's Python, standard library only: nothing is installed (C-23).
+      - name: Run the agent
+        working-directory: agents/opsagent
+        run: |
+          python3 --version
+          python3 -B -m opsagent

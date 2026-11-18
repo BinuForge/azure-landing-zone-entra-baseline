@@ -2,8 +2,8 @@
 # Signs the az CLI in as the job environment's identity with GitHub OIDC. Used instead of a third-party
 # login action, so no outside code handles the token. The job needs `id-token: write`.
 #
-# Needs AZURE_CLIENT_ID and AZURE_TENANT_ID from the environment, and AZURE_SUBSCRIPTION_ID for any
-# identity with an Azure role. The ops agent's runner has none, so it has no subscription to select.
+# Needs AZURE_CLIENT_ID and AZURE_TENANT_ID from the environment. AZURE_SUBSCRIPTION_ID is optional: a job
+# that only calls the AI gateway, such as the gateway tests' caller, has no subscription to select.
 set -euo pipefail
 
 : "${AZURE_CLIENT_ID:?}" "${AZURE_TENANT_ID:?}"
