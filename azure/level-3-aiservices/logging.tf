@@ -1,5 +1,6 @@
 # Prompt content is the most sensitive data in the platform (ADR-0010): its own workspace, its own
-# access, a small cap, and content only when the flag is on.
+# access, a small cap, and content only when the flag is on. Workspace permissions only: with resource
+# permissions on, anyone who can read the Foundry account could query its logs here.
 resource "azurerm_log_analytics_workspace" "prompts" {
   name                            = "${var.prefix}-log-prompts-prd-ae"
   resource_group_name             = local.rg
@@ -8,7 +9,7 @@ resource "azurerm_log_analytics_workspace" "prompts" {
   retention_in_days               = 30
   daily_quota_gb                  = var.prompt_workspace_daily_quota_gb
   local_authentication_enabled    = false
-  allow_resource_only_permissions = true
+  allow_resource_only_permissions = false
   tags                            = local.tags
 }
 

@@ -57,6 +57,13 @@
    HCP token and the plan encryption key with `gh secret set`. Tenant and subscription IDs are identifiers,
    not credentials, so bootstrap stores them as environment secrets: Actions prints variable values in
    logs, and logs are public on this repository.
+6. No pipeline identity reads log data unless reading logs is its job. Reader, Role Based Access Control
+   Administrator and Resource Policy Contributor all include `*/read`, and `workspaces/query/read` is a
+   management-plane action, so each of them can query Log Analytics. Pipelines hold custom twins with the
+   Log Analytics and Application Insights log reads removed: `lab-role-config-reader`,
+   `lab-role-role-assigner` and `lab-role-policy-writer`. Contributor stays where an apply identity owns a
+   workspace: it could redirect the logs anyway. No level may delegate Log Analytics Reader outside the
+   management group (ADR-0010).
 
 The person-run bootstrap was chosen because, with one maintainer, a separate identity pipeline adds no
 separation of duties. It would only add a second automated path to Tier 0.
@@ -68,25 +75,25 @@ Scope "root" is the tenant root management group. Resource group names follow `d
 
 | Identity | Role | Scope | Why |
 |---|---|---|---|
-| `lab-azure-l0-plan` | Reader | root | Read management groups and placement |
+| `lab-azure-l0-plan` | Custom `lab-role-config-reader`: Reader without log reads (decision 6) | root | Read management groups and placement |
 | `lab-azure-l0-apply` | Management Group Contributor | root | Create the hierarchy |
-| `lab-azure-l1-plan` | Reader | root | Read policy state |
-| `lab-azure-l1-apply` | Resource Policy Contributor | root | Policy definitions and assignments. Deny and audit only, so no policy identity needs roles |
-| `lab-azure-l2-plan` | Reader | management, connectivity, DNS groups | |
+| `lab-azure-l1-plan` | Custom `lab-role-config-reader` | root | Read policy state |
+| `lab-azure-l1-apply` | Custom `lab-role-policy-writer`: Resource Policy Contributor without log reads, deployments or support (decision 6) | root | Policy definitions and assignments. Deny and audit only, so no policy identity needs roles |
+| `lab-azure-l2-plan` | Custom `lab-role-config-reader` | management, connectivity, DNS groups | |
 | `lab-azure-l2-apply` | Contributor | management group (resource group) | Log Analytics |
 | `lab-azure-l2-apply` | Network Contributor | connectivity group | Hub network |
 | `lab-azure-l2-apply` | Private DNS Zone Contributor | DNS group | Zones, and links to the hub |
-| `lab-azure-l3-plan` | Reader | AI services, connectivity and DNS groups | Plans read the peering and zone links that level 3 owns in the hub's groups |
-| `lab-azure-l3-plan` | Custom `lab-role-rbac-reader`: `roleAssignments/read` and `roleDefinitions/read` only | management group (resource group) | Plans refresh the alert's role on the ops workspace; Reader would also let them query the ops logs |
+| `lab-azure-l3-plan` | Custom `lab-role-config-reader` | AI services, connectivity, DNS and management groups | Plans read the peering and zone links level 3 owns in the hub's groups, and the alert's role on the ops workspace |
 | `lab-azure-l3-apply` | Contributor | AI services group | Foundry, APIM, prompt workspace |
 | `lab-azure-l3-apply` | Custom `lab-role-spoke-network-join`: peer with the hub and register private endpoint records | connectivity and DNS groups | Spoke joins the hub without owning it |
 | `lab-azure-l3-apply` | Custom `lab-role-log-linker`: `workspaces/read` and `workspaces/sharedKeys/action` only | management group (resource group) | Diagnostic settings to the ops workspace need it; local auth is off there, so the keys are unusable |
-| `lab-azure-l3-apply` | Role Based Access Control Administrator, condition: may assign only Cognitive Services OpenAI User and Log Analytics Reader, and only to service principals | AI services group | Give APIM's identity the model role (ADR-0008) |
-| `lab-azure-l3-apply` | Role Based Access Control Administrator, condition: may assign only Log Analytics Reader, and only to service principals | management group (resource group) | Give the prompt-query alert's identity read on the ops workspace (threat model C-16) |
+| `lab-azure-l3-apply` | Custom `lab-role-role-assigner` (Role Based Access Control Administrator without log reads), condition: may assign only Cognitive Services OpenAI User, and only to service principals | AI services group | Give APIM's identity the model role (ADR-0008) |
+| `lab-azure-l3-apply` | Custom `lab-role-role-assigner` (Role Based Access Control Administrator without log reads), condition: may assign only Log Analytics Reader, and only to service principals | management group (resource group) | Give the prompt-query alert's identity read on the ops workspace (threat model C-16) |
 | `lab-azure-l3-apply` | Custom `lab-role-soft-delete-purger`: read and purge soft-deleted APIM services and AI accounts only | subscription | Purging is a subscription-level action; without it a teardown leaves names reserved |
-| `lab-azure-l4-plan` | Reader | subscription | HCP dynamic credentials, `run_phase:plan`. Plans read the runner's role assignments, which sit at several scopes |
+| `lab-azure-l4-plan` | Custom `lab-role-config-reader` | subscription | HCP dynamic credentials, `run_phase:plan`. Plans read the runner's role assignments, which sit at several scopes |
 | `lab-azure-l4-apply` | Contributor | ops agent group | HCP dynamic credentials, `run_phase:apply` |
-| `lab-azure-l4-apply` | Role Based Access Control Administrator, condition: may assign only Reader, Cost Management Reader and Log Analytics Reader, and only to service principals | subscription | Give the runner identity its read roles |
+| `lab-azure-l4-apply` | Custom `lab-role-role-assigner`, condition: may assign only the config reader and Cost Management Reader, and only to service principals | subscription | Give the runner identity its read roles |
+| `lab-azure-l4-apply` | Custom `lab-role-role-assigner`, condition: may assign only Log Analytics Reader, and only to service principals | management group (resource group) | Give the runner read on the ops workspace (threat model C-06) |
 | `lab-azure-l4-opsagent-run` | Custom `lab-role-report-writer`: blob write and add only, no read, list or delete | report store container | The ops agent's runner adds reports (ADR-0015). Its read roles come from level 4 (threat model C-06) |
 
 Moving a subscription needs `roleAssignments/write` and `delete` on it, which in practice means Owner

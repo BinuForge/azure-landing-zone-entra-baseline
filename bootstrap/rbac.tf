@@ -3,20 +3,41 @@ locals {
   root_scope         = "/providers/Microsoft.Management/managementGroups/${data.azuread_client_config.current.tenant_id}"
   rg                 = { for k, rg in azurerm_resource_group.this : k => rg.id }
 
+  # Read actions that return log data rather than configuration. Reader, Role Based Access Control
+  # Administrator and Resource Policy Contributor all include */read, and workspaces/query/read is a
+  # management-plane read, so each of them can query Log Analytics. Their custom twins below remove these.
+  log_reads = [
+    "Microsoft.OperationalInsights/workspaces/query/*",
+    "Microsoft.OperationalInsights/workspaces/tables/query/read",
+    "Microsoft.OperationalInsights/workspaces/search/read",
+    "Microsoft.Insights/logs/*",
+    "Microsoft.Insights/components/query/read",
+  ]
+
+  # Custom roles referenced by name in role_assignments, so the provider resolves the ID at each scope.
+  custom_role_names = {
+    "custom:config-reader" = azurerm_role_definition.config_reader.name
+    "custom:role-assigner" = azurerm_role_definition.role_assigner.name
+    "custom:policy-writer" = azurerm_role_definition.policy_writer.name
+  }
+
   # Built-in role IDs, checked with `az role definition list --name "<role>" --query [0].name`.
   role_ids = {
-    reader                  = "acdd72a7-3385-48ef-bd42-f606fba81ae7"
     cost_management_reader  = "72fafb9e-0641-4937-9268-a91bfd8191a3"
     log_analytics_reader    = "73c42c96-874c-492b-b04d-ab87d138a893"
     cognitive_services_user = "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd" # Cognitive Services OpenAI User: inference only, no listkeys
   }
 
-  # A level may assign only these roles, and only to service principals (ADR-0012, decision 3).
+  # A level may assign only these roles, and only to service principals (ADR-0012, decision 3). Log
+  # Analytics Reader is allowed on the management group only, so no level can grant read on the prompt
+  # workspace (ADR-0010).
   delegations = {
-    l3 = [local.role_ids.cognitive_services_user, local.role_ids.log_analytics_reader]
+    l3 = [local.role_ids.cognitive_services_user]
     # Level 3's prompt-query alert reads the ops workspace with its own identity (threat model C-16).
     l3-management = [local.role_ids.log_analytics_reader]
-    l4            = [local.role_ids.reader, local.role_ids.cost_management_reader, local.role_ids.log_analytics_reader]
+    l4            = [azurerm_role_definition.config_reader.role_definition_id, local.role_ids.cost_management_reader]
+    # The runner reads the ops workspace (threat model C-06).
+    l4-management = [local.role_ids.log_analytics_reader]
   }
 
   delegation_conditions = {
@@ -48,27 +69,29 @@ locals {
 
   # The table in ADR-0012, as data. Key: identity/role/scope.
   role_assignments = {
-    "azure-l0-plan/reader/root"                       = { identity = "azure-l0-plan", role = "Reader", scope = local.root_scope }
+    "azure-l0-plan/config-reader/root"                = { identity = "azure-l0-plan", role = "custom:config-reader", scope = local.root_scope }
     "azure-l0-apply/mg-contributor/root"              = { identity = "azure-l0-apply", role = "Management Group Contributor", scope = local.root_scope }
-    "azure-l1-plan/reader/root"                       = { identity = "azure-l1-plan", role = "Reader", scope = local.root_scope }
-    "azure-l1-apply/policy-contributor/root"          = { identity = "azure-l1-apply", role = "Resource Policy Contributor", scope = local.root_scope }
-    "azure-l2-plan/reader/management"                 = { identity = "azure-l2-plan", role = "Reader", scope = local.rg.management }
-    "azure-l2-plan/reader/connectivity"               = { identity = "azure-l2-plan", role = "Reader", scope = local.rg.connectivity }
-    "azure-l2-plan/reader/dns"                        = { identity = "azure-l2-plan", role = "Reader", scope = local.rg.dns }
+    "azure-l1-plan/config-reader/root"                = { identity = "azure-l1-plan", role = "custom:config-reader", scope = local.root_scope }
+    "azure-l1-apply/policy-writer/root"               = { identity = "azure-l1-apply", role = "custom:policy-writer", scope = local.root_scope }
+    "azure-l2-plan/config-reader/management"          = { identity = "azure-l2-plan", role = "custom:config-reader", scope = local.rg.management }
+    "azure-l2-plan/config-reader/connectivity"        = { identity = "azure-l2-plan", role = "custom:config-reader", scope = local.rg.connectivity }
+    "azure-l2-plan/config-reader/dns"                 = { identity = "azure-l2-plan", role = "custom:config-reader", scope = local.rg.dns }
     "azure-l2-apply/contributor/management"           = { identity = "azure-l2-apply", role = "Contributor", scope = local.rg.management }
     "azure-l2-apply/network-contributor/connectivity" = { identity = "azure-l2-apply", role = "Network Contributor", scope = local.rg.connectivity }
     "azure-l2-apply/dns-contributor/dns"              = { identity = "azure-l2-apply", role = "Private DNS Zone Contributor", scope = local.rg.dns }
-    "azure-l3-plan/reader/aiservices"                 = { identity = "azure-l3-plan", role = "Reader", scope = local.rg.aiservices }
-    "azure-l3-plan/reader/connectivity"               = { identity = "azure-l3-plan", role = "Reader", scope = local.rg.connectivity }
-    "azure-l3-plan/reader/dns"                        = { identity = "azure-l3-plan", role = "Reader", scope = local.rg.dns }
+    "azure-l3-plan/config-reader/aiservices"          = { identity = "azure-l3-plan", role = "custom:config-reader", scope = local.rg.aiservices }
+    "azure-l3-plan/config-reader/connectivity"        = { identity = "azure-l3-plan", role = "custom:config-reader", scope = local.rg.connectivity }
+    "azure-l3-plan/config-reader/management"          = { identity = "azure-l3-plan", role = "custom:config-reader", scope = local.rg.management }
+    "azure-l3-plan/config-reader/dns"                 = { identity = "azure-l3-plan", role = "custom:config-reader", scope = local.rg.dns }
     "azure-l3-apply/contributor/aiservices"           = { identity = "azure-l3-apply", role = "Contributor", scope = local.rg.aiservices }
     "azure-l3-apply/spoke-join/connectivity"          = { identity = "azure-l3-apply", role = "custom:spoke-network-join", scope = local.rg.connectivity }
     "azure-l3-apply/spoke-join/dns"                   = { identity = "azure-l3-apply", role = "custom:spoke-network-join", scope = local.rg.dns }
-    "azure-l3-apply/rbac-admin/aiservices"            = { identity = "azure-l3-apply", role = "Role Based Access Control Administrator", scope = local.rg.aiservices, condition = "l3" }
-    "azure-l3-apply/rbac-admin/management"            = { identity = "azure-l3-apply", role = "Role Based Access Control Administrator", scope = local.rg.management, condition = "l3-management" }
-    "azure-l4-plan/reader/subscription"               = { identity = "azure-l4-plan", role = "Reader", scope = local.subscription_scope }
+    "azure-l3-apply/role-assigner/aiservices"         = { identity = "azure-l3-apply", role = "custom:role-assigner", scope = local.rg.aiservices, condition = "l3" }
+    "azure-l3-apply/role-assigner/management"         = { identity = "azure-l3-apply", role = "custom:role-assigner", scope = local.rg.management, condition = "l3-management" }
+    "azure-l4-plan/config-reader/subscription"        = { identity = "azure-l4-plan", role = "custom:config-reader", scope = local.subscription_scope }
     "azure-l4-apply/contributor/opsagent"             = { identity = "azure-l4-apply", role = "Contributor", scope = local.rg.opsagent }
-    "azure-l4-apply/rbac-admin/subscription"          = { identity = "azure-l4-apply", role = "Role Based Access Control Administrator", scope = local.subscription_scope, condition = "l4" }
+    "azure-l4-apply/role-assigner/subscription"       = { identity = "azure-l4-apply", role = "custom:role-assigner", scope = local.subscription_scope, condition = "l4" }
+    "azure-l4-apply/role-assigner/management"         = { identity = "azure-l4-apply", role = "custom:role-assigner", scope = local.rg.management, condition = "l4-management" }
   }
 }
 
@@ -155,33 +178,60 @@ resource "azurerm_role_assignment" "soft_delete_purger" {
   description        = "Bootstrap, ADR-0012. Purge soft-deleted APIM and AI accounts on teardown."
 }
 
-# Level 3 owns one role assignment on the ops workspace, the prompt-query alert's (threat model C-16), and
-# its plan identity must refresh it. Reader would do that, but Reader's */read also covers
-# workspaces/query/read, which would let a plan identity read the ops logs. This role reads role
-# assignments and nothing else.
-resource "azurerm_role_definition" "rbac_reader" {
-  name        = "${var.prefix}-role-rbac-reader"
-  scope       = local.subscription_scope
-  description = "Read role assignments and role definitions only. Created by bootstrap, ADR-0012."
+# Plan identities read configuration, never data (ADR-0012, decision 6). Defined at the root management
+# group so levels 0 and 1 can hold it there.
+resource "azurerm_role_definition" "config_reader" {
+  name        = "${var.prefix}-role-config-reader"
+  scope       = local.root_scope
+  description = "Reader without log data. Created by bootstrap, ADR-0012."
+
+  permissions {
+    actions     = ["*/read"]
+    not_actions = local.log_reads
+  }
+
+  assignable_scopes = [local.root_scope]
+}
+
+# Role Based Access Control Administrator without log data or support tickets. Every assignment of it
+# carries a delegation condition naming the only roles it may grant (ADR-0012, decision 3).
+resource "azurerm_role_definition" "role_assigner" {
+  name        = "${var.prefix}-role-role-assigner"
+  scope       = local.root_scope
+  description = "Assign roles, under a delegation condition, without reading log data. Created by bootstrap, ADR-0012."
 
   permissions {
     actions = [
-      "Microsoft.Authorization/roleAssignments/read",
-      "Microsoft.Authorization/roleDefinitions/read",
+      "*/read",
+      "Microsoft.Authorization/roleAssignments/write",
+      "Microsoft.Authorization/roleAssignments/delete",
     ]
+    not_actions = local.log_reads
   }
 
-  assignable_scopes = [local.rg.management]
+  assignable_scopes = [local.root_scope]
 }
 
-resource "azurerm_role_assignment" "rbac_reader" {
-  for_each = toset(["azure-l3-plan"])
+# Resource Policy Contributor without log data, ARM deployments or support tickets: level 1 writes
+# policy objects directly.
+resource "azurerm_role_definition" "policy_writer" {
+  name        = "${var.prefix}-role-policy-writer"
+  scope       = local.root_scope
+  description = "Write policy definitions, initiatives, assignments and exemptions without reading log data. Created by bootstrap, ADR-0012."
 
-  scope              = local.rg.management
-  principal_id       = azuread_service_principal.pipeline[each.key].object_id
-  principal_type     = "ServicePrincipal"
-  role_definition_id = azurerm_role_definition.rbac_reader.role_definition_resource_id
-  description        = "Bootstrap, ADR-0012. Refresh level 3's role assignment on the ops workspace."
+  permissions {
+    actions = [
+      "*/read",
+      "Microsoft.Authorization/policyAssignments/*",
+      "Microsoft.Authorization/policyDefinitions/*",
+      "Microsoft.Authorization/policyExemptions/*",
+      "Microsoft.Authorization/policySetDefinitions/*",
+      "Microsoft.PolicyInsights/*",
+    ]
+    not_actions = local.log_reads
+  }
+
+  assignable_scopes = [local.root_scope]
 }
 
 resource "azurerm_role_assignment" "pipeline" {
@@ -190,7 +240,7 @@ resource "azurerm_role_assignment" "pipeline" {
   scope                = each.value.scope
   principal_id         = azuread_service_principal.pipeline[each.value.identity].object_id
   principal_type       = "ServicePrincipal"
-  role_definition_name = startswith(each.value.role, "custom:") ? null : each.value.role
+  role_definition_name = startswith(each.value.role, "custom:") ? lookup(local.custom_role_names, each.value.role, null) : each.value.role
   role_definition_id   = each.value.role == "custom:spoke-network-join" ? azurerm_role_definition.spoke_network_join.role_definition_resource_id : null
 
   condition         = try(local.delegation_conditions[each.value.condition], null)

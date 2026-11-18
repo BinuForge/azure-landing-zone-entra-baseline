@@ -38,6 +38,7 @@ Problems the tests found in the live environment, and how each was closed.
 | Date | Found by | Finding | Fix | Proof |
 |---|---|---|---|---|
 | 2026-11-15 | GW-02, `gateway-tests` run 43701410635 | A human account held `Foundry User` at subscription scope, granted outside code before this build. It could have called the model directly, skipping the gateway's limits, kill switch and logs (threat model TM-06) | Role removed. The account stays as a recovery account: it can grant access, and holds none on the model | `2026-11-15-gateway-retest`, GW-02 |
+| 2026-11-16 | Review of a plan failure (PR #42) | The prompt workspace was readable beyond the maintainer (ADR-0010). Reader, Role Based Access Control Administrator and Resource Policy Contributor all include `*/read`, which covers Log Analytics queries, and pipeline identities held them at the root, the subscription and the AI services group. Resource permissions were also on, so read on the Foundry account was enough, and level 3 could still delegate Log Analytics Reader there. Content logging was off, so the workspace held no prompts | Custom twins of the three roles without log reads (ADR-0012, decision 6); prompt workspace set to workspace permissions only; Log Analytics Reader delegable on the management group only | PR #43: bootstrap and level 3 tests |
 
 The finding run was cancelled before its report job, so it has no signed pack; its job logs are the
 record. GW-09 failed in the same run because the test expected the wrong refusal, not because of a gap:

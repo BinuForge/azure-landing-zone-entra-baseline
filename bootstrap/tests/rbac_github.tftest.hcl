@@ -10,6 +10,7 @@ mock_provider "azurerm" {
   mock_resource "azurerm_role_definition" {
     defaults = {
       role_definition_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-0000000000aa"
+      role_definition_id          = "00000000-0000-0000-0000-0000000000aa"
     }
   }
 }
@@ -56,31 +57,31 @@ run "every_role_assignment_admin_is_constrained" {
 
   assert {
     condition = alltrue([
-      for k, ra in azurerm_role_assignment.pipeline : ra.role_definition_name == "Role Based Access Control Administrator" && ra.condition != null && ra.condition_version == "2.0"
-      if strcontains(k, "/rbac-admin/")
+      for k, ra in azurerm_role_assignment.pipeline : ra.role_definition_name == azurerm_role_definition.role_assigner.name && ra.condition != null && ra.condition_version == "2.0"
+      if strcontains(k, "/role-assigner/")
     ])
-    error_message = "Every Role Based Access Control Administrator assignment must carry a condition."
+    error_message = "Every role assigner assignment must carry a condition."
   }
 
   assert {
     condition = alltrue([
       for k, ra in azurerm_role_assignment.pipeline :
       !strcontains(ra.condition, "8e3af657-a8ff-443c-a75c-2fe8c4bcb635") && !strcontains(ra.condition, "18d7d88d-d35e-4fb5-a5c3-7773c20a72d9")
-      if strcontains(k, "/rbac-admin/")
+      if strcontains(k, "/role-assigner/")
     ])
     error_message = "A delegation condition must never allow Owner or User Access Administrator."
   }
 
   assert {
-    condition     = strcontains(azurerm_role_assignment.pipeline["azure-l3-apply/rbac-admin/aiservices"].condition, "'ServicePrincipal'")
+    condition     = strcontains(azurerm_role_assignment.pipeline["azure-l3-apply/role-assigner/aiservices"].condition, "'ServicePrincipal'")
     error_message = "Delegated role assignment must be limited to service principals."
   }
 
   # On the management group, level 3 may grant Log Analytics Reader only: never the model role.
   assert {
     condition = (
-      strcontains(azurerm_role_assignment.pipeline["azure-l3-apply/rbac-admin/management"].condition, "73c42c96-874c-492b-b04d-ab87d138a893")
-      && !strcontains(azurerm_role_assignment.pipeline["azure-l3-apply/rbac-admin/management"].condition, "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd")
+      strcontains(azurerm_role_assignment.pipeline["azure-l3-apply/role-assigner/management"].condition, "73c42c96-874c-492b-b04d-ab87d138a893")
+      && !strcontains(azurerm_role_assignment.pipeline["azure-l3-apply/role-assigner/management"].condition, "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd")
     )
     error_message = "Level 3's management delegation must allow Log Analytics Reader and nothing else."
   }
@@ -129,20 +130,62 @@ run "purger_can_only_purge_soft_deleted_services" {
   }
 }
 
-run "rbac_reader_reads_role_assignments_only" {
+run "no_pipeline_identity_reads_log_data" {
   command = plan
 
   assert {
-    condition = toset(one(azurerm_role_definition.rbac_reader.permissions).actions) == toset([
-      "Microsoft.Authorization/roleAssignments/read",
-      "Microsoft.Authorization/roleDefinitions/read",
-    ])
-    error_message = "The RBAC reader must not read anything but role assignments and definitions, least of all logs."
+    condition = alltrue([for r in [
+      azurerm_role_definition.config_reader,
+      azurerm_role_definition.role_assigner,
+      azurerm_role_definition.policy_writer,
+      ] : contains(one(r.permissions).actions, "*/read") && alltrue([for a in [
+        "Microsoft.OperationalInsights/workspaces/query/*",
+        "Microsoft.OperationalInsights/workspaces/tables/query/read",
+        "Microsoft.OperationalInsights/workspaces/search/read",
+        "Microsoft.Insights/logs/*",
+        "Microsoft.Insights/components/query/read",
+    ] : contains(one(r.permissions).not_actions, a)])])
+    error_message = "Every custom role with */read must remove the Log Analytics and Application Insights log reads."
   }
 
   assert {
-    condition     = keys(azurerm_role_assignment.rbac_reader) == ["azure-l3-plan"]
-    error_message = "Only level 3's plan owns a role assignment in the management group."
+    condition     = toset(one(azurerm_role_definition.config_reader.permissions).actions) == toset(["*/read"])
+    error_message = "The config reader must read and nothing else."
+  }
+
+  assert {
+    condition     = alltrue([for k, ra in azurerm_role_assignment.pipeline : ra.role_definition_name == azurerm_role_definition.config_reader.name if strcontains(k, "-plan/")])
+    error_message = "Every plan identity must hold the config reader."
+  }
+
+  # These built-ins include */read, which covers Log Analytics queries.
+  assert {
+    condition = !anytrue([
+      for k, ra in azurerm_role_assignment.pipeline :
+      contains(["Reader", "Role Based Access Control Administrator", "Resource Policy Contributor"], ra.role_definition_name)
+      if !strcontains(k, "/spoke-join/")
+    ])
+    error_message = "No pipeline identity may hold Reader, Role Based Access Control Administrator or Resource Policy Contributor: use the custom twins."
+  }
+}
+
+run "no_level_can_grant_read_on_the_prompt_workspace" {
+  command = plan
+
+  assert {
+    condition = alltrue([
+      for k, ra in azurerm_role_assignment.pipeline : !strcontains(ra.condition, "73c42c96-874c-492b-b04d-ab87d138a893")
+      if strcontains(k, "/role-assigner/") && !endswith(k, "/management")
+    ])
+    error_message = "Log Analytics Reader may be delegated on the management group only, never where the prompt workspace lives (ADR-0010)."
+  }
+
+  assert {
+    condition = (
+      strcontains(azurerm_role_assignment.pipeline["azure-l4-apply/role-assigner/subscription"].condition, azurerm_role_definition.config_reader.role_definition_id)
+      && strcontains(azurerm_role_assignment.pipeline["azure-l4-apply/role-assigner/management"].condition, "73c42c96-874c-492b-b04d-ab87d138a893")
+    )
+    error_message = "Level 4 grants the runner the config reader at subscription and Log Analytics Reader on the management group only."
   }
 }
 
