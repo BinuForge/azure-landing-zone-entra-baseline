@@ -1,0 +1,61 @@
+name: azure-l4
+
+# Level 4: the ops agent workload. Same shape as the other levels, but plans and applies execute in HCP
+# Terraform: the GitHub job uploads the configuration and waits, and HCP signs in to Azure with dynamic
+# credentials (lab-azure-l4-plan for plans, lab-azure-l4-apply for applies). The GitHub environments hold
+# only the HCP token and the plan key, so no Azure credential for this level exists in GitHub (ADR-0012).
+# The saved plan is a pointer to the HCP run; applying it confirms that run after approval here.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - azure/level-4-workloads/opsagent/**
+      - .github/workflows/azure-l4.yml
+      - .github/workflows/_plan.yml
+      - .github/workflows/_apply.yml
+  push:
+    branches: [main]
+    paths:
+      - azure/level-4-workloads/opsagent/**
+      - .github/workflows/azure-l4.yml
+      - .github/workflows/_plan.yml
+      - .github/workflows/_apply.yml
+  workflow_dispatch:
+
+# Deny everything by default; each job grants only what its called workflow needs.
+permissions: {}
+
+# One run per level at a time, never cancelled part way through an apply.
+concurrency:
+  group: azure-l4
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    uses: ./.github/workflows/_plan.yml
+    # id-token is requested by the shared workflow. Level 4's identities trust HCP only, so a GitHub token
+    # cannot be exchanged for them.
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    with:
+      working_directory: azure/level-4-workloads/opsagent
+      environment: lab-azure-l4-plan
+      comment: ${{ github.event_name == 'pull_request' }}
+    # Brings secrets into scope so the called job's environment secrets resolve. The repository holds no
+    # repository-level secrets by design, so nothing else is passed.
+    secrets: inherit
+
+  apply:
+    needs: plan
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && needs.plan.outputs.has_changes == 'true'
+    uses: ./.github/workflows/_apply.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      working_directory: azure/level-4-workloads/opsagent
+      environment: lab-azure-l4-apply
+      artifact: ${{ needs.plan.outputs.artifact }}
+    secrets: inherit

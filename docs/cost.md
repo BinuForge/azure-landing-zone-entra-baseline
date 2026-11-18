@@ -46,3 +46,4 @@ Warn before a phase would take the total past **400**.
 | `azure/level-2-platform/connectivity` | 4 | 3 (hub VNet, 2 reserved subnets) | 206 |
 | `azure/level-2-platform/dns` | 4 | 6 (3 private DNS zones, 3 hub links) | 212 |
 | `azure/level-3-aiservices` | 5 | 43 (spoke VNet, 2 subnets, 2 NSGs, 2 NSG associations, 2 peerings, 3 zone links, account, project, private endpoint, guardrail, 1 model deployment, prompt workspace, 2 diagnostic settings, prompt query alert and its role, 11 APIM NSG rules, and 10 APIM resources while enable_apim is on) | 255 |
+| `azure/level-4-workloads/opsagent` | 5 | 7 (6 runner role assignments, canary NSG) | 262 |

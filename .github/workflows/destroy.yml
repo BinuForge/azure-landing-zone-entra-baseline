@@ -16,6 +16,7 @@ on:
         options:
           - check
           - all
+          - azure-l4-opsagent
           - azure-l3-aiservices
           - azure-l2
           - azure-l2-dns
@@ -50,8 +51,35 @@ jobs:
   # Level destroy jobs go here, highest level first. Each one needs the job before it and runs when
   # `!failure() && !cancelled()`, so a skipped level does not stop the chain.
 
-  plan-destroy-l3-aiservices:
+  plan-destroy-l4-opsagent:
     needs: confirm
+    if: ${{ !failure() && !cancelled() && contains(fromJSON('["all", "azure-l4-opsagent"]'), inputs.target) }}
+    uses: ./.github/workflows/_plan.yml
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    with:
+      working_directory: azure/level-4-workloads/opsagent
+      environment: lab-azure-l4-plan
+      destroy: true
+    secrets: inherit
+
+  destroy-l4-opsagent:
+    needs: plan-destroy-l4-opsagent
+    if: ${{ !failure() && !cancelled() && needs.plan-destroy-l4-opsagent.outputs.has_changes == 'true' }}
+    uses: ./.github/workflows/_apply.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      working_directory: azure/level-4-workloads/opsagent
+      environment: lab-azure-l4-apply
+      artifact: ${{ needs.plan-destroy-l4-opsagent.outputs.artifact }}
+    secrets: inherit
+
+  plan-destroy-l3-aiservices:
+    needs: [confirm, destroy-l4-opsagent]
     if: ${{ !failure() && !cancelled() && contains(fromJSON('["all", "azure-l3-aiservices"]'), inputs.target) }}
     uses: ./.github/workflows/_plan.yml
     permissions:
