@@ -64,11 +64,6 @@ override_data {
   }
 }
 
-# Mock providers cannot import, so every run plans a fresh build (imports.tf).
-variables {
-  adopt_gateway_diagnostic = false
-}
-
 run "account_has_no_public_path_and_no_keys" {
   command = plan
 
@@ -178,6 +173,11 @@ run "prompt_content_is_off_by_default_and_separate" {
   assert {
     condition     = azurerm_log_analytics_workspace.prompts.local_authentication_enabled == false
     error_message = "The prompt workspace must be keyless."
+  }
+
+  assert {
+    condition     = azurerm_log_analytics_workspace.prompts.allow_resource_only_permissions == false
+    error_message = "The prompt workspace must need workspace permissions: read on the Foundry account must not be enough (ADR-0010)."
   }
 }
 

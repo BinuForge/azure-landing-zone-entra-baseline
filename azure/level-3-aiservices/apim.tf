@@ -235,7 +235,7 @@ resource "azurerm_role_assignment" "apim_openai_user" {
 # The run ID travels from the caller to the model (threat model C-22). Gateway logs record it and the ID
 # sent on to Foundry, and never a request or response body or the caller's IP (ADR-0010). Turning on
 # gateway logs (apim_ops) makes Azure create this diagnostic with defaults that log the caller's IP, so
-# it is created before apim_ops; where Azure got there first it is imported (imports.tf).
+# it is created before apim_ops. The lab's copy was imported once (PR #41).
 resource "azurerm_api_management_diagnostic" "azuremonitor" {
   count = local.apim
 

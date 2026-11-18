@@ -108,7 +108,7 @@ most, from people who can write tags, names, log lines or plans into data the mo
 | TM-07 | A workflow change on a branch uses the runner identity | Spoofing, EoP | | | C-10, C-14 | T-07 | Maintainer self-approval (ADR-0006) |
 | TM-08 | Reports or PR comments leak subscription IDs, resource IDs, IP ranges or tenant names on a public repo | Information disclosure | LLM02 | AML.T0057 | C-11, C-12 | T-08 | Redaction patterns can miss a new identifier format |
 | TM-09 | The model's output carries a markdown image or link that sends data to an attacker when rendered | Information disclosure | LLM05 | | C-13 | T-09 | Only as good as the sanitiser |
-| TM-10 | Prompt logs expose estate metadata to anyone who can read logs | Information disclosure | LLM02 | | C-15, C-16 | T-10 | The maintainer can read them |
+| TM-10 | Prompt logs expose estate metadata to anyone who can read logs | Information disclosure | LLM02 | | C-15, C-16 | T-10 | The maintainer and level 3's apply identity can read them; every query raises an alert |
 | TM-11 | The system prompt is extracted | Information disclosure | LLM07 | | C-17 | None needed | None: the prompt is published in the repo and holds nothing secret |
 | TM-12 | A loop or abuse burns tokens and credit | Denial of service | LLM10 | AML.T0034 | C-18, C-19, C-20 | T-11 | Budgets alert, they do not stop spend; the free account's spending limit does |
 | TM-13 | The agent reports wrong figures or a wrong cause with confidence | Tampering (of decisions) | LLM09 | | C-21, C-04 | T-12 | Judgement calls in suggestions cannot be checked automatically |
@@ -126,7 +126,7 @@ most, from people who can write tags, names, log lines or plans into data the mo
 | C-03 | No write tools exist. Suggestions are text; changes only reach Azure through a pull request, the PR gates and a person | Runner, ADR-0006 |
 | C-04 | A person reads every suggestion before acting on it | Process |
 | C-05 | The runner exposes a fixed list of named, parameterised queries. Parameters are validated; unknown tools are refused and logged | Runner |
-| C-06 | Runner identity: Reader on lab resource groups, Cost Management Reader, Log Analytics Reader on the ops workspace only. No Key Vault data access, no prompt workspace | Terraform, level 4 |
+| C-06 | Runner identity: config reader (Reader without log reads) on lab resource groups, Cost Management Reader, Log Analytics Reader on the ops workspace only. No Key Vault data access, no prompt workspace | Terraform, level 4 |
 | C-07 | Local (key) authentication disabled on Foundry | Terraform, enforced by policy |
 | C-08 | Public network access disabled on Foundry; private endpoint only | Terraform, enforced by policy |
 | C-09 | Only the APIM managed identity holds a data-plane role on Foundry | Terraform, level 3 |
