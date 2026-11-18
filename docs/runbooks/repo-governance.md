@@ -33,7 +33,7 @@ are created by bootstrap, so their rows below are still the target until bootstr
 | Rule | Value | Why |
 |---|---|---|
 | Require a pull request | On, 0 required approvals | Every change runs the gates; approvals cannot be required with one maintainer (ADR-0006) |
-| Required status checks | `discover`, `secrets-scan`, `iac-scan` and each `terraform (<root>) / <root>` check | A failing gate blocks the merge. Each new Terraform root adds a check, and the ruleset is updated in the same PR |
+| Required status checks | `discover`, `secrets-scan`, `iac-scan`, `agent-tests` and each `terraform (<root>) / <root>` check | A failing gate blocks the merge. Each new Terraform root adds a check, and the ruleset is updated in the same PR |
 | Block force pushes | On | History on `main` cannot be rewritten by accident |
 | Restrict deletions | On | `main` cannot be deleted |
 | Bypass | Repository admin only | A solo maintainer needs a way to recover; bypasses are logged |

@@ -25,6 +25,9 @@ CLAUDE.local.md
 notes/
 *.notes.md
 
+# Python
+__pycache__/
+
 # Editors and OS
 .DS_Store
 .vscode/

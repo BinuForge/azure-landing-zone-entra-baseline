@@ -1,5 +1,5 @@
-# Shared by the gateway tests. Names are built the way level 3 builds them, because the runner has no Azure
-# role and cannot read Terraform outputs.
+# Shared by the gateway tests. Names are built the way level 3 builds them, because the runner cannot read
+# Terraform outputs.
 # shellcheck shell=bash
 PREFIX="${PREFIX:-lab}"
 TENANT="${AZURE_TENANT_ID:?set AZURE_TENANT_ID}"

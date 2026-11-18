@@ -9,5 +9,8 @@
 /bootstrap/     @BinuForge
 /tfc/           @BinuForge
 
+# The ops agent: code that runs as the runner identity and calls the model.
+/agents/        @BinuForge
+
 # Identity baseline
 /entra/         @BinuForge
