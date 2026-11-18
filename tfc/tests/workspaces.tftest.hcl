@@ -105,8 +105,15 @@ run "level_4_gets_separate_plan_and_apply_identities" {
   command = plan
 
   assert {
-    condition     = tfe_variable.this["azure-workload-credentials/TFC_AZURE_RUN_PLAN_CLIENT_ID"].value != tfe_variable.this["azure-workload-credentials/TFC_AZURE_RUN_APPLY_CLIENT_ID"].value
+    condition     = tfe_variable.this["azure-workload-credentials/TFC_AZURE_PLAN_CLIENT_ID"].value != tfe_variable.this["azure-workload-credentials/TFC_AZURE_APPLY_CLIENT_ID"].value
     error_message = "Level 4 plan and apply must use different identities."
+  }
+
+  # HCP falls back to TFC_AZURE_RUN_CLIENT_ID for a phase without its own ID, which would let one
+  # identity run both phases.
+  assert {
+    condition     = !contains(keys(tfe_variable.this), "azure-workload-credentials/TFC_AZURE_RUN_CLIENT_ID")
+    error_message = "Level 4 must not set a shared TFC_AZURE_RUN_CLIENT_ID."
   }
 
   assert {
