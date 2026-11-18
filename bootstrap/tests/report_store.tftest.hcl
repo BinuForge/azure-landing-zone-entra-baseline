@@ -36,14 +36,12 @@ mock_provider "github" {
   }
 }
 
-mock_provider "azapi" {}
-
-# What Azure stores for the default management group: its short name (governance.tf check).
-override_resource {
-  target          = azapi_resource.hierarchy_settings
-  override_during = plan
-  values = {
-    output = { properties = { defaultManagementGroup = "lab-mg-sandbox" } }
+mock_provider "azapi" {
+  # What Azure stores for the default management group: its short name (governance.tf check).
+  mock_data "azapi_resource" {
+    defaults = {
+      output = { properties = { defaultManagementGroup = "lab-mg-sandbox" } }
+    }
   }
 }
 
