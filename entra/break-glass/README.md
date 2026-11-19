@@ -29,8 +29,9 @@ still in the expected state.
 | Authentication | Now: Microsoft Authenticator and SMS. Target: one FIDO2 security key per account, stored apart (see open items) | MFA is mandatory for admin portals; a key cannot be phished |
 | Password | 32 random characters, on paper only, each stored in a different place | Not in a password manager on a daily device |
 
-Names, the domain and object IDs are not committed. Object IDs reach Terraform through git-ignored
-`env/*.auto.tfvars` or environment variables.
+The domain and object IDs are not committed. The names follow the convention and are public here:
+`entra/level-0-privileged` finds the accounts by alias, so CI needs no identifiers. Their protection is
+the restricted unit, the checks, phishing-resistant keys and the sign-in alert, not a hidden name.
 
 ## How the code uses them
 
@@ -38,7 +39,7 @@ Names, the domain and object IDs are not committed. Object IDs reach Terraform t
 |---|---|---|
 | Entra level 0 (`privileged`) | Both accounts and an exclusion group containing them, in a restricted management administrative unit, so no administrator or pipeline can change them without first taking an audited role on the unit (ADR-0016) | Entra baseline |
 | Entra level 1 (`ca`) | Every Conditional Access policy excludes that group | Entra baseline |
-| Checks | The accounts exist, are enabled, are cloud-only and hold Global Administrator; the plan fails otherwise | Entra baseline |
+| Checks (`entra/level-0-privileged`) | Exactly two accounts with the alias exist, are enabled, are cloud-only members and hold Global Administrator; the plan fails otherwise, in CI and locally | Entra baseline |
 | Bootstrap | Entra sign-in logs to the security workspace (`entra_diagnostics`), then an alert on any sign-in by either account | Logs with the Entra baseline; the alert after it |
 
 Sending sign-in logs to Log Analytics needs Entra ID P1 or P2. Without a licence, sign-ins are reviewed

@@ -1,0 +1,42 @@
+name: entra-l0-privileged
+
+# Entra level 0, Tier 0 objects: the restricted administrative unit, break-glass checks and exclusion
+# groups (ADR-0016). CI only plans, with a read-only identity, so every pull request and every change on
+# main shows the plan and runs the break-glass checks. There is no apply job and no apply environment:
+# the maintainer applies from their own machine (docs/runbooks/entra-privileged.md).
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - entra/level-0-privileged/**
+      - .github/workflows/entra-l0-privileged.yml
+      - .github/workflows/_plan.yml
+  push:
+    branches: [main]
+    paths:
+      - entra/level-0-privileged/**
+      - .github/workflows/entra-l0-privileged.yml
+      - .github/workflows/_plan.yml
+  workflow_dispatch:
+
+# Deny everything by default; the job grants only what the called workflow needs.
+permissions: {}
+
+concurrency:
+  group: entra-l0-privileged
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    uses: ./.github/workflows/_plan.yml
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    with:
+      working_directory: entra/level-0-privileged
+      environment: lab-entra-l0-privileged-plan
+      comment: ${{ github.event_name == 'pull_request' }}
+    # Brings secrets into scope so the called job's environment secrets resolve. The repository holds no
+    # repository-level secrets by design, so nothing else is passed.
+    secrets: inherit

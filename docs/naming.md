@@ -71,9 +71,9 @@ Pattern: `<prefix>-<type>-<component>-<env>-<region>[-<nn>]`, where `<type>` is 
 | Object | Pattern | Example |
 |---|---|---|
 | Persona group | `<prefix>-grp-persona-<persona>` | `lab-grp-persona-admins` |
-| Conditional Access exclusion group | `<prefix>-grp-excl-<policy id>` | `lab-grp-excl-ca001` |
+| Conditional Access exclusion group | `<prefix>-grp-excl-<policy id>`, or `<prefix>-grp-excl-breakglass` for the group every policy excludes | `lab-grp-excl-ca001` |
 | Role-assignable group | `<prefix>-grp-role-<role>` | `lab-grp-role-securityreader` |
-| Administrative unit | `<prefix>-au-<scope>` | `lab-au-privileged` |
+| Administrative unit | `<prefix>-au-<scope>` | `lab-au-emergency` |
 | Conditional Access policy | `CA<nnn>-<Persona>-<Purpose>` | `CA001-Global-BlockLegacyAuth` |
 | Named location | `<prefix>-nl-<name>` | `lab-nl-trusted-countries` |
 | Authentication strength | `<prefix>-authstrength-<name>` | `lab-authstrength-phishingresistant` |

@@ -50,6 +50,7 @@ Warn before a phase would take the total past **400**.
 | `azure/level-3-aiservices` | 5 | 44 (spoke VNet, 2 subnets, 2 NSGs, 2 NSG associations, 2 peerings, 3 zone links, account, project, private endpoint, guardrail, 1 model deployment, prompt workspace, 2 diagnostic settings, prompt query alert and its role, 12 APIM NSG rules, and 10 APIM resources while enable_apim is on) | 338 |
 | `azure/level-4-workloads/opsagent` | 5 | 7 (6 runner role assignments, canary NSG) | 345 |
 | `entra/level-0-org` | 4 | 2 persona groups | 347 |
+| `entra/level-0-privileged` | 4 | 6 (restricted unit, exclusion group, 3 unit members, break-glass checks) | 353 |
 
-The other Entra levels have 53 resources left before the 400 warning. With Azure levels 2 to 4 torn
-down, as between sessions, the total is 286.
+The other Entra levels have 47 resources left before the 400 warning. With Azure levels 2 to 4 torn
+down, as between sessions, the total is 292.
