@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Sets the two pipeline credentials in every Terraform environment, outside Terraform so they never
-# reach state (ADR-0012, decision 5). Run again to rotate both. See docs/runbooks/bootstrap.md.
+# Sets the two pipeline credentials in every Terraform environment, Azure and Entra, outside Terraform so
+# they never reach state (ADR-0012, decision 5). Run again to rotate both. See docs/runbooks/bootstrap.md.
 #
 #   bash bootstrap/scripts/set-pipeline-secrets.sh
 #

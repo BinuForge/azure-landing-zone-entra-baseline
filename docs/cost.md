@@ -39,7 +39,8 @@ Warn before a phase would take the total past **400**.
 
 | Root | Phase | Resources | Running total |
 |---|---|---|---|
-| `bootstrap/` | 3, 4 | 221 (budget, 7 resource groups, lock, 19 apps, 19 service principals, 25 app role assignments (24 Graph, 1 gateway), 18 federated credentials, 10 custom roles, 30 role assignments, subscription placement, hierarchy settings, report store account and container, security workspace, 18 environments, 9 branch policies, 34 variables, 25 secrets), plus 1 with `entra_diagnostics` on | 221 |
+| `bootstrap/` | 3, 4 | 145 (budget, 7 resource groups, lock, 12 apps, 12 service principals, 1 app role assignment, 11 federated credentials, 10 custom roles, 30 role assignments, subscription placement, hierarchy settings, report store account and container, security workspace, 11 environments, 6 branch policies, 20 variables, 18 secrets), plus 1 with `entra_diagnostics` on | 145 |
+| `entra/bootstrap/` | 4 | 76 (7 apps, 7 service principals, 7 federated credentials, 24 Graph permission grants, 7 environments, 3 branch policies, 14 variables, 7 secrets) | 221 |
 | `tfc/` | 3 | 38 (3 projects, 12 workspaces, 12 workspace settings, 2 variable sets, 2 attachments, 7 variables) | 259 |
 | `azure/level-0-org` | 4 | 10 management groups | 269 |
 | `azure/level-1-governance` | 4 | 13 (2 custom definitions, 3 initiatives, 4 assignments, 4 exemptions) | 282 |

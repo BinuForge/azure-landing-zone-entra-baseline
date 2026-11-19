@@ -43,10 +43,10 @@ through gated pipelines, and built to be deployed in a dedicated lab tenant.
 |---|---|
 | `bootstrap/` | One-off setup, run by a person: budget, pipeline identities, federated credentials, roles (`rbac.yaml`), GitHub environments |
 | `tfc/` | HCP Terraform projects, workspaces and variable sets, from YAML |
-| `modules/` | Small local modules where Azure Verified Modules do not fit (none yet) |
+| `modules/` | Small local modules where Azure Verified Modules do not fit |
 | `azure/` | Azure platform levels 0-4 |
 | `agents/` | The ops agent: Python, standard library only |
-| `entra/` | Entra ID levels 0-1 and break-glass checks |
+| `entra/` | Entra ID bootstrap (pipeline identities and Graph permissions, run by a person), levels 0-1, break-glass checks |
 | `tests/` | Live tests: policy, AI gateway, ops agent. Maester and Pester come with the Entra baseline |
 | `evidence/` | Signed results from live deployments and tests |
 | `docs/` | Architecture, ADRs, runbooks, security, cost |

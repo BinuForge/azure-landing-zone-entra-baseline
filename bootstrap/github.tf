@@ -87,9 +87,8 @@ resource "github_actions_environment_secret" "tenant_id" {
   value       = data.azuread_client_config.current.tenant_id
 }
 
-# Entra levels manage no Azure resources, so their environments do not get the subscription ID.
 resource "github_actions_environment_secret" "subscription_id" {
-  for_each = { for name, e in local.github_environments : name => e if startswith(e.identity, "azure-") }
+  for_each = local.github_environments
 
   repository  = var.github_repository
   environment = github_repository_environment.this[each.key].environment

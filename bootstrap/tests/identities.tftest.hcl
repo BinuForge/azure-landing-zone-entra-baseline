@@ -8,12 +8,6 @@ mock_provider "azurerm" {
 }
 
 mock_provider "azuread" {
-  # Microsoft Graph's service principal in this tenant (entra.tf).
-  mock_data "azuread_service_principal" {
-    defaults = {
-      object_id = "00000000-0000-0000-0000-000000000003"
-    }
-  }
   mock_data "azuread_client_config" {
     defaults = {
       object_id = "00000000-0000-0000-0000-000000000001"
@@ -50,19 +44,13 @@ run "one_plan_and_one_apply_identity_per_level_plus_the_runner" {
   command = plan
 
   assert {
-    condition     = length([for k in keys(azuread_application.pipeline) : k if startswith(k, "azure-")]) == 11
-    error_message = "Expected 11 Azure identities: plan and apply for levels 0-4, and the ops agent runner."
+    condition     = length(azuread_application.pipeline) == 11
+    error_message = "Expected 11 identities: plan and apply for levels 0-4, and the ops agent runner."
   }
 
   assert {
-    condition     = alltrue([for app in azuread_application.pipeline : can(regex("^lab-(azure-l[0-4]|entra-l[01]-[a-z]+)-([a-z]+-)?(plan|apply|run)$", app.display_name))])
+    condition     = alltrue([for app in azuread_application.pipeline : can(regex("^lab-azure-l[0-4]-([a-z]+-)?(plan|apply|run)$", app.display_name))])
     error_message = "An identity name does not follow docs/naming.md."
-  }
-
-  # The description is part of the app; this one predates Entra and must not change.
-  assert {
-    condition     = azuread_application.pipeline["azure-l2-apply"].description == "Pipeline identity for lab-azure-l2 (apply). Created by bootstrap, ADR-0012. Federated only: never add a secret."
-    error_message = "Azure identity descriptions must stay as they are in the tenant."
   }
 }
 
@@ -79,7 +67,7 @@ run "github_subjects_pin_immutable_repo_and_environment" {
   command = plan
 
   assert {
-    condition     = alltrue([for c in azuread_application_federated_identity_credential.github : can(regex("^repo:example@1/repo@2:environment:lab-(azure|entra)-", c.subject))])
+    condition     = alltrue([for c in azuread_application_federated_identity_credential.github : startswith(c.subject, "repo:example@1/repo@2:environment:lab-azure-")])
     error_message = "GitHub subjects must use the immutable repository prefix and an environment, never a branch."
   }
 

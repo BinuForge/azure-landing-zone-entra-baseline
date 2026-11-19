@@ -83,11 +83,9 @@ locals {
     )
   }
 
-  rbac = yamldecode(file("${path.module}/rbac.yaml"))
-
   # The table in ADR-0012, as data (rbac.yaml). Each entry gets one shape, so it can drive for_each.
   role_assignments = {
-    for key, a in local.rbac.assignments : key => {
+    for key, a in yamldecode(file("${path.module}/rbac.yaml")).assignments : key => {
       identity    = split("/", key)[0]
       scope       = lookup(local.scopes, try(split("/", key)[2], ""), null)
       role        = a.role

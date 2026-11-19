@@ -16,12 +16,6 @@ mock_provider "azurerm" {
 }
 
 mock_provider "azuread" {
-  # Microsoft Graph's service principal in this tenant (entra.tf).
-  mock_data "azuread_service_principal" {
-    defaults = {
-      object_id = "00000000-0000-0000-0000-000000000003"
-    }
-  }
   mock_data "azuread_client_config" {
     defaults = {
       object_id = "00000000-0000-0000-0000-000000000001"
@@ -341,8 +335,8 @@ run "apply_environments_need_review_and_main" {
   command = plan
 
   assert {
-    condition     = length(github_repository_environment.this) == 18
-    error_message = "Expected one environment per GitHub-federated identity (9 Azure, 7 Entra), plus level 4 plan and apply."
+    condition     = length(github_repository_environment.this) == 11
+    error_message = "Expected one environment per GitHub-federated identity, plus level 4 plan and apply."
   }
 
   assert {

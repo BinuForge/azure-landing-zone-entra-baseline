@@ -42,6 +42,13 @@
 | The maintainer applies locally; CI plans with a read-only identity | No automated path holds a Tier 0 write, and drift still shows on every pull request | A person runs the apply, and their machine is in scope |
 | Portal only | Nothing to build | No review, no drift detection, no evidence |
 
+### Where the Entra identities are created
+
+| Option | For | Against |
+|---|---|---|
+| In `bootstrap/`, with the Azure identities | One person-run root | One run needs subscription Owner, root elevation and Global Administrator together, and an Azure change can touch Graph grants by accident |
+| A separate root, `entra/bootstrap/`, sharing a module with Azure's | Each root needs only its own rights, and the identity boundary is visible in the layout | Two person-run roots and two states |
+
 ### How many identities
 
 | Option | For | Against |
@@ -77,26 +84,31 @@
    Access exclusion groups, custom directory roles, role-assignable groups and PIM. CI plans it with a
    read-only identity, and the maintainer applies it locally, as for bootstrap. No GitHub identity holds a
    Tier 0 permission. The other three workspaces apply through gated pipelines.
-2. Each Entra workspace has its own pair, `lab-entra-<level>-<component>-plan` and `-apply`, and a GitHub
+2. Entra pipeline identities are created by their own person-run root, `entra/bootstrap/`, with state in
+   `lab-entra-l0-bootstrap-prd`. It uses the azuread and github providers only, so it needs Global
+   Administrator and repository admin, and no Azure role. The app, federated credential and GitHub
+   environment come from `modules/github-pipeline-identity`, which `bootstrap/` can adopt later with
+   `moved` blocks.
+3. Each Entra workspace has its own pair, `lab-entra-<level>-<component>-plan` and `-apply`, and a GitHub
    environment for each, with ADR-0012's rules: plans from any branch, applies from `main` with a
    reviewer. `level-0-privileged` has a plan identity only. Entra environments hold no subscription ID.
-3. Graph permissions are data, in the `graph:` section of `bootstrap/rbac.yaml`. Bootstrap grants them by
-   ID from an allowed list in `bootstrap/entra.tf`. The list leaves out every permission that can assign
-   roles, grant permissions, add credentials, change every group or open consent, and
-   `bootstrap/tests/entra.tftest.hcl` checks that it stays that way.
-4. The break-glass accounts and every Conditional Access exclusion group go in a restricted management
+4. Graph permissions are data, in `entra/bootstrap/graph.yaml`. The root grants them by ID from an allowed
+   list in `entra/bootstrap/graph.tf`. The list leaves out every permission that can assign roles, grant
+   permissions, add credentials, change every group or open consent, and
+   `entra/bootstrap/tests/graph.tftest.hcl` checks that it stays that way.
+5. The break-glass accounts and every Conditional Access exclusion group go in a restricted management
    administrative unit. To change a member, the maintainer assigns themselves Groups Administrator on the
    unit, makes the change and removes the role. Both steps are in the audit log.
-5. Bootstrap creates `lab-log-security-prd-ae` in its own resource group and sends Entra's audit,
+6. The Azure bootstrap creates `lab-log-security-prd-ae` in its own resource group and sends Entra's audit,
    sign-in and risk logs there, behind `entra_diagnostics` (off until the tenant has P1 or P2). No
    pipeline identity holds a role that reads logs there.
 
 `level-0-privileged` was kept out of CI's apply path for the same reason ADR-0012 kept identity creation
-there: with one maintainer, a reviewed pipeline adds no separation of duties, only a second way into Tier 0.
+out of CI: with one maintainer, a reviewed pipeline adds no separation of duties, only a second way into Tier 0.
 
 ## Graph permissions
 
-`bootstrap/rbac.yaml` is the source; this table explains each row.
+`entra/bootstrap/graph.yaml` is the source; this table explains each row.
 
 | Identity | Application permissions | Why |
 |---|---|---|
@@ -129,8 +141,8 @@ User consent is turned off through the authorisation policy, so no custom consen
 
 - Easier: each Entra identity's reach is one row of data, and a Tier 0 permission cannot be granted
   without changing the allowed list, which a test reads.
-- Harder: Tier 0 changes need the maintainer at their own machine, and a membership change in the
+- Harder: two person-run roots instead of one. Tier 0 changes need the maintainer at their own machine, and a membership change in the
   restricted unit takes two extra audited steps.
-- At bank scale: a separate Tier 0 pipeline on a privileged access runner with two-person approval;
+- At bank scale: `entra/bootstrap` lives in the identity team's repository with its own approvers, and a separate Tier 0 pipeline on a privileged access runner with two-person approval;
   workload identity Conditional Access on every pipeline identity (Workload ID Premium); Graph activity
   logs to the SIEM; quarterly access reviews of every Graph grant.

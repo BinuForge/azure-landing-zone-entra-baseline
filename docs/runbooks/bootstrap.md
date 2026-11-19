@@ -1,8 +1,15 @@
 # Bootstrap
 
-Bootstrap is the only Terraform a person applies by hand. It creates everything the pipelines need
-before they can run: the budget, resource providers, level resource groups, pipeline identities and
-their federated credentials, role assignments and GitHub environments (ADR-0012). Treat it as Tier 0.
+Two roots are applied by a person, never by a pipeline, because they create the pipelines' own
+access. Treat both as Tier 0.
+
+- `bootstrap/` creates what the Azure pipelines need before they can run: the budget, resource
+  providers, level resource groups, pipeline identities and their federated credentials, role
+  assignments and GitHub environments (ADR-0012).
+- `entra/bootstrap/` does the same for the Entra pipelines, with Graph permissions instead of Azure roles
+  (ADR-0016, see below).
+
+`entra/level-0-privileged` is also applied by a person, but it is a level, not bootstrap.
 
 Never run it from CI, never `terraform destroy` it, and never add a resource that a level could own.
 
@@ -12,12 +19,12 @@ Never run it from CI, never `terraform destroy` it, and never add a resource tha
 |---|---|
 | `budget.tf` | Monthly budget with three actual and one forecast alert |
 | `resource_groups.tf` | Resource provider registrations, one resource group per level component, a delete lock on the bootstrap group |
-| `identities.tf` | Plan and apply app registrations per Azure level and per Entra workspace, the ops agent runner, and their federated credentials |
-| `rbac.yaml` | Every Azure role and Graph permission a pipeline identity holds, one row each (ADR-0012, ADR-0016) |
-| `entra.tf` | The Graph permissions `rbac.yaml` may name, their admin consent, the security workspace and Entra's diagnostic settings (ADR-0016) |
+| `identities.tf` | Plan and apply app registrations per level, the ops agent runner, and their federated credentials |
+| `rbac.yaml` | Every role a pipeline identity holds, one row each (ADR-0012, decision 8) |
 | `rbac.tf` | Custom roles, delegation conditions, and the role assignments from `rbac.yaml` |
 | `report_store.tf` | The ops agent's report store, its write-only role, and read access for the maintainer (ADR-0015) |
 | `governance.tf` | Subscription placement, hierarchy settings and the maintainer's own access |
+| `security_logs.tf` | The security workspace for Entra's logs, and Entra's diagnostic settings (ADR-0016) |
 | `github.tf` | One GitHub environment per GitHub-federated identity, with branch rules, reviewers, variables and identifier secrets, plus level 4 plan and apply environments that hold only the HCP token |
 | `scripts/set-pipeline-secrets.sh` | The HCP token and plan encryption keys, set outside Terraform |
 
@@ -77,6 +84,45 @@ Entra's audit and sign-in logs go to `lab-log-security-prd-ae` once the tenant h
 Set `entra_diagnostics = true` in `env/lab.auto.tfvars` and run bootstrap. Before the licence ends, set
 it back to `false` and run again.
 
+## Entra bootstrap (`entra/bootstrap/`)
+
+A second person-run root: the Entra pipeline identities, their Microsoft Graph permissions
+(`graph.yaml`) and their GitHub environments (ADR-0016). It needs Global Administrator and repository
+admin only: no Azure role and no elevation. Treat it as Tier 0, like bootstrap.
+
+| File | Creates |
+|---|---|
+| `main.tf` | One plan and apply identity per Entra workspace in `tfc/workspaces.yaml`, through `modules/github-pipeline-identity`. `level-0-privileged` gets a plan identity only |
+| `graph.yaml` | Every Graph permission each identity holds |
+| `graph.tf` | The permissions `graph.yaml` may name, by ID, and their admin consent |
+
+First run only: copy `env/example.auto.tfvars` to `env/lab.auto.tfvars` and fill in, run
+`terraform init` with `TF_CLOUD_ORGANIZATION` set, then set `lab-entra-l0-bootstrap-prd` to Local
+execution in HCP Terraform, as for bootstrap.
+
+Every run, from `entra/bootstrap/` on an up-to-date `main`:
+
+```sh
+export TF_CLOUD_ORGANIZATION=<org>
+export GITHUB_TOKEN="$(gh auth token)"
+terraform init
+terraform plan -var-file=env/lab.auto.tfvars -out=tfplan
+terraform apply tfplan
+unset GITHUB_TOKEN
+```
+
+Then run the pipeline secrets script below, so the new environments get the HCP token and plan keys.
+
+Checks: every `lab-entra-*` app registration shows only federated credentials, and only the Graph
+application permissions in `graph.yaml`, with admin consent granted and no delegated permissions.
+
+```sh
+# Graph permission IDs per Entra identity; compare with graph_permission_ids in graph.tf.
+for sp in $(az ad sp list --filter "startswith(displayName,'lab-entra-')" --query "[].id" -o tsv); do
+  az rest --url "https://graph.microsoft.com/v1.0/servicePrincipals/$sp/appRoleAssignments" --query "value[].appRoleId" -o tsv
+done
+```
+
 ## Pipeline secrets
 
 Run after the first apply that creates environments, and every 30 days to rotate.
@@ -120,16 +166,8 @@ gh api repos/<owner>/<repo>/environments --jq '.environments[].name'
 az role assignment list --all --query "[?starts_with(description || '', 'Bootstrap')].roleDefinitionName" -o tsv | sort | uniq -c
 ```
 
-In the Entra admin centre, every `lab-azure-*` and `lab-entra-*` app registration must show no client
-secrets or certificates, only federated credentials. Each `lab-entra-*` one holds only the Microsoft
-Graph application permissions in `rbac.yaml`, with admin consent granted, and no delegated permissions:
-
-```sh
-# Graph permission IDs per Entra identity; compare with graph_permission_ids in entra.tf.
-for sp in $(az ad sp list --filter "startswith(displayName,'lab-entra-')" --query "[].id" -o tsv); do
-  az rest --url "https://graph.microsoft.com/v1.0/servicePrincipals/$sp/appRoleAssignments" --query "value[].appRoleId" -o tsv
-done
-```
+In the Entra admin centre, every `lab-azure-*` app registration must show no client secrets or
+certificates, only federated credentials.
 
 ## Troubleshooting
 
@@ -141,7 +179,7 @@ done
 | `AuthorizationFailed` at a management group scope | Not elevated, or the token predates elevation | Elevate, then `az logout` and `az login` |
 | GitHub 401 or 403 | `GITHUB_TOKEN` not set, or set in another terminal | `export GITHUB_TOKEN="$(gh auth token)"` |
 | Plan wants to replace an app or credential | A level or name changed in `tfc/workspaces.yaml` | Expected when renaming; every pipeline using it must be updated in the same change |
-| `Authorization_RequestDenied` creating an app role assignment | The signed-in account is not Global Administrator, or the token predates the role | Sign in as the daily admin, then `az logout` and `az login` |
+| `Authorization_RequestDenied` creating a Graph app role assignment (Entra bootstrap) | The signed-in account is not Global Administrator, or the token predates the role | Sign in as the daily admin, then `az logout` and `az login` |
 | Plan wants to replace a role assignment | Its key, role, scope or description changed in `rbac.yaml`, or its delegation condition changed in `rbac.tf` | Expected for a real change. For a rename, add a `moved` block in `rbac.tf` instead |
 | Deleting a custom role hangs with "waiting for confirmation" | Azure has deleted it but still lists it for a few minutes | Stop with Ctrl+C, wait five minutes, then plan and apply again |
 | Warning: `new_subscriptions_land_in_sandbox` | The tenant's default management group was changed outside Terraform | `az account management-group hierarchy-settings update --name <tenant-id> --default-management-group /providers/Microsoft.Management/managementGroups/lab-mg-sandbox` |
