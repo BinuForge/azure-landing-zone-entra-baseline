@@ -80,7 +80,9 @@ Pattern: `<prefix>-<type>-<component>-<env>-<region>[-<nn>]`, where `<type>` is 
 
 Conditional Access policy names use title case because people read them in sign-in logs. Personas
 follow Microsoft's Zero Trust persona model: `Global`, `Admins`, `Internals`, `Guests`,
-`WorkloadIdentities`.
+`WorkloadIdentities`. Only internals and guests are groups (`entra/level-0-org`): policies target
+admins by directory role, so roles activated through PIM are covered, and workload identities need
+Workload ID Premium.
 
 Break-glass accounts are created by hand and are not covered by this convention
 (see `entra/break-glass/`).
