@@ -3,7 +3,7 @@
 | Level | Path | Contents |
 |---|---|---|
 | - | `bootstrap/` | The Entra pipeline identities, their Graph permissions (`graph.yaml`) and GitHub environments. Run by a person (ADR-0016) |
-| 0 | `level-0-org/` | Persona groups, owned by the level's apply identity |
+| 0 | `level-0-org/` | Persona groups with dynamic membership (internals, guests), owned by the level's apply identity. Administrators are targeted by directory role, not by group |
 | 0 | `level-0-privileged/` | Tier 0: the restricted administrative unit, Conditional Access exclusion groups, custom roles, role-assignable groups, PIM. CI plans it; the maintainer applies it |
 | 1 | `level-1-governance/` | Authorisation, consent, authentication methods, cross-tenant defaults |
 | 1 | `level-1-conditionalaccess/` | Named locations, authentication strengths, Conditional Access baseline |
@@ -14,4 +14,4 @@ its workspace needs (ADR-0016, `bootstrap/graph.yaml`). No pipeline can assign d
 permissions or add credentials. Entra's diagnostic settings are in the Azure bootstrap, which sends the
 logs to a security workspace only the maintainer reads.
 
-Not built yet: the levels. Only `bootstrap/` and `break-glass/` exist.
+Built so far: `bootstrap/`, `level-0-org/` and `break-glass/`. The other levels follow.
