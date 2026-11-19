@@ -16,7 +16,7 @@ through gated pipelines, and built to be deployed in a dedicated lab tenant.
 | 2 | Decisions and governance: ADRs, CODEOWNERS, PR template, governance runbook, licence | Done |
 | 3 | Bootstrap and destroy workflows, verified costs | Done, apart from checking cost figures in the pricing calculator |
 | 4 | Thin platform: management groups, policy, management, connectivity, DNS | Azure done, deployed 2026-11-15 |
-| 4 | Entra ID baseline and break-glass | In progress: pipeline identities and Graph permissions (ADR-0016) |
+| 4 | Entra ID baseline and break-glass | In progress: pipeline identities (ADR-0016), persona groups, break-glass protection, Conditional Access baseline in report-only (ADR-0017) |
 | 5 | AI workload: threat model, Foundry, AI gateway, guardrails, ops agent | Done, deployed and tested live 2026-11-15 to 2026-11-18 |
 | 6 | Architecture and control mapping | Planned |
 

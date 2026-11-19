@@ -6,7 +6,7 @@
 | 0 | `level-0-org/` | Persona groups with dynamic membership (internals, guests), owned by the level's apply identity. Administrators are targeted by directory role, not by group |
 | 0 | `level-0-privileged/` | Tier 0: the restricted administrative unit, Conditional Access exclusion groups, custom roles, role-assignable groups, PIM. CI plans it; the maintainer applies it |
 | 1 | `level-1-governance/` | Authorisation, consent, authentication methods, cross-tenant defaults |
-| 1 | `level-1-conditionalaccess/` | Named locations, authentication strengths, Conditional Access baseline |
+| 1 | `level-1-ca/` | Named location and the Conditional Access baseline, report-only until each policy is enforced (ADR-0017) |
 | - | `break-glass/` | README and checks only; the accounts are created by hand |
 
 Each workspace has its own plan and apply identity, and each holds only the Microsoft Graph permissions
@@ -14,4 +14,5 @@ its workspace needs (ADR-0016, `bootstrap/graph.yaml`). No pipeline can assign d
 permissions or add credentials. Entra's diagnostic settings are in the Azure bootstrap, which sends the
 logs to a security workspace only the maintainer reads.
 
-Built so far: `bootstrap/`, `level-0-org/` and `break-glass/`. The other levels follow.
+Built so far: `bootstrap/`, `level-0-org/`, `level-0-privileged/`, `level-1-ca/` and `break-glass/`.
+`level-1-governance/`, PIM and custom roles follow.

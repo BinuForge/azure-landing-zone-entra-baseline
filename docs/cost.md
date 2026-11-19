@@ -51,6 +51,7 @@ Warn before a phase would take the total past **400**.
 | `azure/level-4-workloads/opsagent` | 5 | 7 (6 runner role assignments, canary NSG) | 345 |
 | `entra/level-0-org` | 4 | 2 persona groups | 347 |
 | `entra/level-0-privileged` | 4 | 6 (restricted unit, exclusion group, 3 unit members, break-glass checks) | 353 |
+| `entra/level-1-ca` | 4 | 9 (named location, 8 Conditional Access policies) | 362 |
 
-The other Entra levels have 47 resources left before the 400 warning. With Azure levels 2 to 4 torn
-down, as between sessions, the total is 292.
+The other Entra levels have 38 resources left before the 400 warning. With Azure levels 2 to 4 torn
+down, as between sessions, the total is 301.
