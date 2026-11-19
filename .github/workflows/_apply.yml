@@ -51,6 +51,9 @@ jobs:
       TFE_TOKEN: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
       TFE_ORGANIZATION: ${{ vars.TF_CLOUD_ORGANIZATION }}
       TF_IN_AUTOMATION: "true"
+      # Only Entra level 0 declares this variable; other levels ignore it, and environments without the
+      # secret leave it empty. Its groups must be owned by its apply identity (entra/bootstrap).
+      TF_VAR_apply_object_id: ${{ secrets.APPLY_OBJECT_ID }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

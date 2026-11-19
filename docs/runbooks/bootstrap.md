@@ -95,6 +95,7 @@ admin only: no Azure role and no elevation. Treat it as Tier 0, like bootstrap.
 | `main.tf` | One plan and apply identity per Entra workspace in `tfc/workspaces.yaml`, through `modules/github-pipeline-identity`. `level-0-privileged` gets a plan identity only |
 | `graph.yaml` | Every Graph permission each identity holds |
 | `graph.tf` | The permissions `graph.yaml` may name, by ID, and their admin consent |
+| `main.tf` (`apply_object_id`) | An `APPLY_OBJECT_ID` secret in both level 0 org environments, naming the apply identity as owner of the groups it creates |
 
 First run only: copy `env/example.auto.tfvars` to `env/lab.auto.tfvars` and fill in, run
 `terraform init` with `TF_CLOUD_ORGANIZATION` set, then set `lab-entra-l0-bootstrap-prd` to Local

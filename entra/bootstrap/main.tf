@@ -16,6 +16,16 @@ locals {
       } if !(phase == "apply" && contains(local.maintainer_applied, "entra-${ws.level}-${ws.component}"))
     } if ws.area == "entra"
   ]...)
+
+  # Workspaces whose apply identity must own what it creates, because its Graph permission manages only
+  # owned objects (Group.Create). A saved plan fixes the owner when the plan identity makes it, so both
+  # environments hold the apply identity's object ID.
+  owning_workspaces = ["entra-l0-org"]
+  apply_object_ids = merge([
+    for ws in local.owning_workspaces : {
+      for phase in ["plan", "apply"] : "${ws}-${phase}" => module.identity["${ws}-apply"].object_id
+    }
+  ]...)
 }
 
 data "azuread_client_config" "current" {}
@@ -39,4 +49,14 @@ module "identity" {
   reviewer_id                = data.github_user.apply_reviewer.id
   tenant_id                  = data.azuread_client_config.current.tenant_id
   tf_cloud_organization      = var.hcp_organization
+}
+
+# An identifier, stored as a secret so it is masked in public logs. Read as TF_VAR_apply_object_id.
+resource "github_actions_environment_secret" "apply_object_id" {
+  for_each = local.apply_object_ids
+
+  repository  = var.github_repository
+  environment = module.identity[each.key].environment
+  secret_name = "APPLY_OBJECT_ID"
+  value       = each.value
 }
