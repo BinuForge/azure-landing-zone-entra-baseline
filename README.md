@@ -16,7 +16,7 @@ through gated pipelines, and built to be deployed in a dedicated lab tenant.
 | 2 | Decisions and governance: ADRs, CODEOWNERS, PR template, governance runbook, licence | Done |
 | 3 | Bootstrap and destroy workflows, verified costs | Done, apart from checking cost figures in the pricing calculator |
 | 4 | Thin platform: management groups, policy, management, connectivity, DNS | Azure done, deployed 2026-11-15 |
-| 4 | Entra ID baseline and break-glass | Next |
+| 4 | Entra ID baseline and break-glass | In progress: pipeline identities and Graph permissions (ADR-0016) |
 | 5 | AI workload: threat model, Foundry, AI gateway, guardrails, ops agent | Done, deployed and tested live 2026-11-15 to 2026-11-18 |
 | 6 | Architecture and control mapping | Planned |
 
@@ -43,10 +43,10 @@ through gated pipelines, and built to be deployed in a dedicated lab tenant.
 |---|---|
 | `bootstrap/` | One-off setup, run by a person: budget, pipeline identities, federated credentials, roles (`rbac.yaml`), GitHub environments |
 | `tfc/` | HCP Terraform projects, workspaces and variable sets, from YAML |
-| `modules/` | Small local modules where Azure Verified Modules do not fit (none yet) |
+| `modules/` | Small local modules where Azure Verified Modules do not fit |
 | `azure/` | Azure platform levels 0-4 |
 | `agents/` | The ops agent: Python, standard library only |
-| `entra/` | Entra ID levels 0-1 and break-glass checks |
+| `entra/` | Entra ID bootstrap (pipeline identities and Graph permissions, run by a person), levels 0-1, break-glass checks |
 | `tests/` | Live tests: policy, AI gateway, ops agent. Maester and Pester come with the Entra baseline |
 | `evidence/` | Signed results from live deployments and tests |
 | `docs/` | Architecture, ADRs, runbooks, security, cost |

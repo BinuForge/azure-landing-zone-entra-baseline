@@ -120,7 +120,7 @@ The maintainer's own standing Azure access:
 | Maintainer | Management Group Contributor | `lab-mg-corp` | Keep the subscription placed there |
 | Maintainer | Custom `lab-role-hierarchy-settings`: `managementgroups/settings/read` and `write` only | root | Hierarchy settings need these at the root, and no built-in role short of Owner grants them |
 
-Entra level identities need Microsoft Graph permissions and are added when the Entra baseline is built.
+Entra level identities hold Microsoft Graph permissions, not Azure roles: see ADR-0016.
 
 ## Risks accepted
 

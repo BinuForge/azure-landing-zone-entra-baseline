@@ -1,0 +1,29 @@
+# Every Microsoft Graph application permission an Entra pipeline identity holds: the table in ADR-0016, as
+# data. graph.tf reads it. Keys are identities from main.tf; values may only name permissions in graph.tf's
+# allowed list, which leaves out every permission that can grant roles or credentials.
+
+entra-l0-org-plan: [Group.Read.All, User.Read.All]
+# Group.Create, not Group.ReadWrite.All: the identity changes only the groups it owns.
+entra-l0-org-apply: [Group.Create, Group.Read.All, User.Read.All]
+# Tier 0: the maintainer applies this workspace, so its only identity reads.
+entra-l0-privileged-plan:
+  - AdministrativeUnit.Read.All
+  - Group.Read.All
+  - User.Read.All
+  - RoleManagement.Read.Directory
+  - RoleManagementPolicy.Read.Directory
+  - RoleEligibilitySchedule.Read.Directory
+  - RoleAssignmentSchedule.Read.Directory
+  - PrivilegedEligibilitySchedule.Read.AzureADGroup
+  - PrivilegedAssignmentSchedule.Read.AzureADGroup
+  - RoleManagementPolicy.Read.AzureADGroup
+entra-l1-governance-plan: [Policy.Read.All]
+entra-l1-governance-apply:
+  - Policy.Read.All
+  - Policy.ReadWrite.AuthenticationMethod
+  - Policy.ReadWrite.Authorization
+  - Policy.ReadWrite.CrossTenantAccess
+  - Policy.ReadWrite.ConsentRequest
+entra-l1-ca-plan: [Policy.Read.All]
+# Microsoft's least-privileged pair for policies, named locations and authentication strengths.
+entra-l1-ca-apply: [Policy.Read.All, Policy.ReadWrite.ConditionalAccess]

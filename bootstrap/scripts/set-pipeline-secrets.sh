@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Sets the two pipeline credentials in every Terraform environment, outside Terraform so they never
-# reach state (ADR-0012, decision 5). Run again to rotate both. See docs/runbooks/bootstrap.md.
+# Sets the two pipeline credentials in every Terraform environment, Azure and Entra, outside Terraform so
+# they never reach state (ADR-0012, decision 5). Run again to rotate both. See docs/runbooks/bootstrap.md.
 #
 #   bash bootstrap/scripts/set-pipeline-secrets.sh
 #
 # TF_TOKEN_APP_TERRAFORM_IO  HCP Terraform owners team token, pasted at the prompt (ADR-0002).
-# PLAN_ENCRYPTION_KEY        Random key per level, shared by that level's plan and apply environments.
+# PLAN_ENCRYPTION_KEY        Random key per level (per workspace for Entra), shared by its plan and apply
+#                            environments.
 #
 # Written for bash 3.2, which macOS ships, so no associative arrays or mapfile.
 set -euo pipefail
@@ -15,7 +16,7 @@ PREFIX="${PREFIX:-lab}"
 
 # Terraform environments only. The ops agent runner never runs Terraform, so it gets neither secret.
 ENVIRONMENTS="$(gh api "repos/$REPO/environments" --jq '.environments[].name' \
-  | grep -E "^${PREFIX}-[a-z]+-l[0-9]-(plan|apply)$" | sort || true)"
+  | grep -E "^${PREFIX}-[a-z]+-l[0-9]-([a-z]+-)?(plan|apply)$" | sort || true)"
 
 if [ -z "$ENVIRONMENTS" ]; then
   echo "No plan or apply environments found in $REPO. Run the bootstrap apply first." >&2
@@ -31,7 +32,8 @@ if [ -z "$TF_TOKEN" ]; then
   exit 1
 fi
 
-# One key per level (lab-azure-l2), shared by its plan and apply environments.
+# One key per level (lab-azure-l2) or Entra workspace (lab-entra-l1-ca), shared by its plan and apply
+# environments.
 LEVELS="$(echo "$ENVIRONMENTS" | sed -E 's/-(plan|apply)$//' | sort -u)"
 
 for level in $LEVELS; do

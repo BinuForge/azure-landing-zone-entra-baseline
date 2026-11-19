@@ -40,3 +40,8 @@ output "report_store" {
     container = azurerm_storage_container.reports.name
   }
 }
+
+output "security_workspace" {
+  description = "Log Analytics workspace that holds Entra's audit, sign-in and risk logs (ADR-0016)."
+  value       = azurerm_log_analytics_workspace.security.name
+}

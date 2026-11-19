@@ -90,7 +90,7 @@ workspaces:
     env: prd
     project: entra-platform
     execution_mode: local
-    description: Administrative units, persona groups, exclusion groups.
+    description: Persona groups, owned by the level's apply identity (ADR-0016).
     reads: []
 
   - area: entra
@@ -99,7 +99,7 @@ workspaces:
     env: prd
     project: entra-platform
     execution_mode: local
-    description: Custom roles, role-assignable groups, PIM.
+    description: Tier 0 - restricted administrative unit, exclusion groups, custom roles, role-assignable groups, PIM. CI plans; the maintainer applies (ADR-0016).
     reads: [entra-l0-org-prd]
 
   - area: entra
@@ -108,8 +108,8 @@ workspaces:
     env: prd
     project: entra-platform
     execution_mode: local
-    description: Authorisation, consent, authentication methods and cross-tenant policies; Entra diagnostics.
-    reads: [entra-l0-org-prd, azure-l2-management-prd]
+    description: Authorisation, consent, authentication methods and cross-tenant policies. Entra diagnostics are in bootstrap (ADR-0016).
+    reads: [entra-l0-org-prd]
 
   - area: entra
     level: l1

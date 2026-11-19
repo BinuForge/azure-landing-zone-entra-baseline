@@ -43,10 +43,9 @@ flowchart BT
 
   e0p --> e0o
   e1g --> e0o
-  e1g --> a2m
   e1c --> e0o
   e1c --> e0p
 ```
 
-The one cross-area edge, `lab-entra-l1-governance-prd` to `lab-azure-l2-management-prd`, exists
-because Entra diagnostic settings send sign-in and audit logs to the platform Log Analytics workspace.
+No edge crosses areas. Entra's sign-in and audit logs go to a security workspace that bootstrap owns,
+not to level 2's ops workspace, so the Entra levels read nothing from Azure (ADR-0016).
