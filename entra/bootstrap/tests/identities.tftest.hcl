@@ -64,3 +64,17 @@ run "branch_based_github_prefix_is_rejected" {
 
   expect_failures = [var.github_oidc_subject_prefix]
 }
+
+run "level_0_org_environments_name_the_apply_identity_as_owner" {
+  command = plan
+
+  assert {
+    condition     = toset(keys(github_actions_environment_secret.apply_object_id)) == toset(["entra-l0-org-plan", "entra-l0-org-apply"])
+    error_message = "Both level 0 org environments, and only they, hold the apply identity's object ID."
+  }
+
+  assert {
+    condition     = alltrue([for s in github_actions_environment_secret.apply_object_id : s.secret_name == "APPLY_OBJECT_ID"])
+    error_message = "The workflows read the secret as APPLY_OBJECT_ID."
+  }
+}
