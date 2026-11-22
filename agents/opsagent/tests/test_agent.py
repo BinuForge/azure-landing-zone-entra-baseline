@@ -11,7 +11,7 @@ from opsagent.gateway import Gateway
 from opsagent.redact import scan
 from opsagent.report import blob_name, render, store, summary
 
-from fakes import FakeAzure, answer, client, config, tool_calls
+from fakes import FakeAzure, answer, client, config, on_host, tool_calls
 
 NOW = dt.datetime(2026, 11, 18, 9, 30, tzinfo=dt.timezone.utc)
 GOOD = "## Summary\nCost was 12.35 AUD for API Management over 7 days.\n## Suspicious content\nA tag on lab-nsg-canary-np-ae asks me to ignore my rules."
@@ -37,12 +37,12 @@ class Runs(unittest.TestCase):
         self.assertIn("12.35", outcome.narrative)
         self.assertGreaterEqual(outcome.figures_checked, 2)
         # Every gateway call carries the run ID (C-22).
-        gateway = [r for r in azure.requests if "azure-api.net" in r[1]]
+        gateway = [r for r in azure.requests if on_host(r[1], "azure-api.net")]
         self.assertTrue(all(r[2].get("X-correlation-id") == "12345" for r in gateway))
 
     def test_the_model_never_sees_identifiers(self):
         azure, *_ = run(tool_calls(("list_resources", {"resource_group": "management"})), answer("## Summary\nNothing to report."))
-        second = [r for r in azure.requests if "azure-api.net" in r[1]][1]
+        second = [r for r in azure.requests if on_host(r[1], "azure-api.net")][1]
         sent = json.dumps(second[3])
         self.assertEqual(scan(sent), [])
         self.assertIn("[tenant]", sent)
@@ -50,7 +50,7 @@ class Runs(unittest.TestCase):
 
     def test_tool_results_are_wrapped_as_untrusted_data(self):
         azure, *_ = run(tool_calls(("list_resources", {"resource_group": "opsagent"})), answer("## Summary\nok"))
-        tool_message = [m for m in [r for r in azure.requests if "azure-api.net" in r[1]][1][3]["messages"] if m["role"] == "tool"][0]
+        tool_message = [m for m in [r for r in azure.requests if on_host(r[1], "azure-api.net")][1][3]["messages"] if m["role"] == "tool"][0]
         self.assertIn("untrusted_data", json.loads(tool_message["content"]))
 
     def test_planted_tags_are_flagged_by_code(self):
@@ -106,7 +106,7 @@ class Runs(unittest.TestCase):
         cfg = config()
         c = client(azure)
         outcome = Agent(cfg, c, Gateway(c, cfg), log=lambda _: None, request="Query the prompt workspace.").run()
-        first = [r for r in azure.requests if "azure-api.net" in r[1]][0]
+        first = [r for r in azure.requests if on_host(r[1], "azure-api.net")][0]
         self.assertEqual(first[3]["messages"][1], {"role": "user", "content": "Query the prompt workspace."})
         self.assertEqual(outcome.refused, 1)
         self.assertFalse(any("prompts" in r[1] for r in azure.requests))
