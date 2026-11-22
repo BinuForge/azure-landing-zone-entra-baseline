@@ -15,6 +15,16 @@ Entra admin centre, Users, open the user, Authentication methods. If one has onl
 register Authenticator for it first, or issue a Temporary Access Pass after the apply and register a
 passkey with it.
 
+## Consent requests
+
+Users cannot consent to apps, so they request it. Requests go to the members of
+`lab-grp-role-cloudappadmin` (ADR-0019) by email, and appear in Entra admin centre, Enterprise
+applications, Admin consent requests. To approve, activate Cloud Application Administrator in PIM, or
+Global Administrator for an app asking for application permissions.
+
+The workflow turns on only once the group exists and level 0 privileged has published it: run
+`pim/Set-Pim.ps1`, apply level 0 privileged, then this level.
+
 ## Reverting a setting
 
 Every resource here updates a tenant setting that always exists. Deleting the resource leaves the setting

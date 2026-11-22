@@ -52,7 +52,7 @@ Warn before a phase would take the total past **400**.
 | `entra/level-0-org` | 4 | 2 persona groups | 347 |
 | `entra/level-0-privileged` | 4 | 6 (restricted unit, exclusion group, 3 unit members, break-glass checks) | 353 |
 | `entra/level-1-ca` | 4 | 9 (named location, 8 Conditional Access policies) | 362 |
-| `entra/level-1-governance` | 4 | 7 (authorisation policy, cross-tenant default, 5 authentication methods) | 369 |
+| `entra/level-1-governance` | 4 | 8 (authorisation policy, cross-tenant default, 5 authentication methods, admin consent policy) | 370 |
 
-PIM and custom roles have 31 resources left before the 400 warning. With Azure levels 2 to 4 torn
-down, as between sessions, the total is 308.
+Custom roles and later Entra work have 30 resources left before the 400 warning. With Azure levels 2
+to 4 torn down, as between sessions, the total is 309.

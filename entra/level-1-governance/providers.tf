@@ -3,3 +3,6 @@
 # authentication methods, cross-tenant access and consent requests; the plan identity Policy.Read.All
 # (ADR-0016). Tenant settings have no azuread resources, so they are set through Microsoft Graph.
 provider "msgraph" {}
+
+# Reads level 0's outputs only (ADR-0013). TFE_TOKEN and TFE_ORGANIZATION come from the workflow.
+provider "tfe" {}

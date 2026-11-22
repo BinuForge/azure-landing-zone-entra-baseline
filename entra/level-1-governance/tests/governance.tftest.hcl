@@ -1,6 +1,8 @@
 # Runs with a mock provider: no sign-in, no network calls, nothing changed.
 mock_provider "msgraph" {}
 
+mock_provider "tfe" {}
+
 # A tenant with passkey profiles, as current tenants return.
 override_data {
   target = data.msgraph_resource.fido2
@@ -117,5 +119,41 @@ run "a_tenant_without_profiles_gets_the_old_properties" {
       !contains(keys(msgraph_update_resource.fido2.body), "passkeyProfiles")
     )
     error_message = "Without profiles, attestation is enforced the old way and no profile is sent."
+  }
+}
+
+run "consent_requests_go_to_the_pim_group" {
+  command = plan
+
+  override_data {
+    target = data.tfe_outputs.privileged
+    values = {
+      nonsensitive_values = { cloudapp_admin_group_id = "00000000-0000-0000-0000-0000000000d1" }
+    }
+  }
+
+  assert {
+    condition = (
+      length(msgraph_update_resource.admin_consent) == 1 &&
+      msgraph_update_resource.admin_consent[0].body.isEnabled == true &&
+      one(msgraph_update_resource.admin_consent[0].body.reviewers).query == "/groups/00000000-0000-0000-0000-0000000000d1/transitiveMembers"
+    )
+    error_message = "Requests are reviewed by the members of the PIM group, and no named person."
+  }
+}
+
+run "no_consent_workflow_until_the_group_exists" {
+  command = plan
+
+  override_data {
+    target = data.tfe_outputs.privileged
+    values = {
+      nonsensitive_values = {}
+    }
+  }
+
+  assert {
+    condition     = length(msgraph_update_resource.admin_consent) == 0
+    error_message = "Requests are not enabled while nobody can review them."
   }
 }
