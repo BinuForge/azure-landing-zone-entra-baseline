@@ -24,6 +24,77 @@ override_data {
   }
 }
 
+override_data {
+  target = data.msgraph_resource.cloudapp_admin_group
+  values = {
+    output = { groups = [] }
+  }
+}
+
+# A healthy PIM state: only break-glass hold standing Global Administrator, every role has an eligible
+# principal, and activation rules match pim/pim.json.
+override_data {
+  target = data.msgraph_resource.ga_schedules
+  values = {
+    output = { standing = ["00000000-0000-0000-0000-0000000000b1", "00000000-0000-0000-0000-0000000000b2"] }
+  }
+}
+
+override_data {
+  target = data.msgraph_resource.eligibility
+  values = {
+    output = { roles = ["62e90394-69f5-4237-9190-012177145e10", "e8611ab8-c189-46e8-94e1-60213ab1f814", "194ae4cb-b126-40b2-bd5b-6091b380977d", "158c047a-c907-4556-b7ef-446551a6b5f7"] }
+  }
+}
+
+override_data {
+  target = data.msgraph_resource.ga_policy
+  values = {
+    output = {
+      rules = [
+        { id = "Expiration_EndUser_Assignment", maximumDuration = "PT4H" },
+        { id = "Enablement_EndUser_Assignment", enabledRules = ["MultiFactorAuthentication", "Justification"] },
+      ]
+    }
+  }
+}
+
+override_data {
+  target = data.msgraph_resource.pra_policy
+  values = {
+    output = {
+      rules = [
+        { id = "Expiration_EndUser_Assignment", maximumDuration = "PT4H" },
+        { id = "Enablement_EndUser_Assignment", enabledRules = ["MultiFactorAuthentication", "Justification"] },
+      ]
+    }
+  }
+}
+
+override_data {
+  target = data.msgraph_resource.secadmin_policy
+  values = {
+    output = {
+      rules = [
+        { id = "Expiration_EndUser_Assignment", maximumDuration = "PT8H" },
+        { id = "Enablement_EndUser_Assignment", enabledRules = ["MultiFactorAuthentication", "Justification"] },
+      ]
+    }
+  }
+}
+
+override_data {
+  target = data.msgraph_resource.cloudapp_policy
+  values = {
+    output = {
+      rules = [
+        { id = "Expiration_EndUser_Assignment", maximumDuration = "PT8H" },
+        { id = "Enablement_EndUser_Assignment", enabledRules = ["MultiFactorAuthentication", "Justification"] },
+      ]
+    }
+  }
+}
+
 run "healthy_accounts_pass_and_join_the_exclusion_group" {
   command = plan
 

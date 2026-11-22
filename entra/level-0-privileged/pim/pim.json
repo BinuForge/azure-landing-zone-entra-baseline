@@ -1,0 +1,33 @@
+{
+  "comment": "Desired PIM state (ADR-0019). Set-Pim.ps1 applies it as the maintainer; pim.tf checks it on every plan. Role IDs are template IDs, the same in every tenant, checked 2026-11-19.",
+  "eligibilityDuration": "P365D",
+  "activationRules": ["MultiFactorAuthentication", "Justification"],
+  "roles": {
+    "Global Administrator": {
+      "id": "62e90394-69f5-4237-9190-012177145e10",
+      "maximumActivation": "PT4H",
+      "eligible": "maintainer"
+    },
+    "Privileged Role Administrator": {
+      "id": "e8611ab8-c189-46e8-94e1-60213ab1f814",
+      "maximumActivation": "PT4H",
+      "eligible": "maintainer"
+    },
+    "Security Administrator": {
+      "id": "194ae4cb-b126-40b2-bd5b-6091b380977d",
+      "maximumActivation": "PT8H",
+      "eligible": "maintainer"
+    },
+    "Cloud Application Administrator": {
+      "id": "158c047a-c907-4556-b7ef-446551a6b5f7",
+      "maximumActivation": "PT8H",
+      "eligible": "lab-grp-role-cloudappadmin"
+    }
+  },
+  "groups": {
+    "lab-grp-role-cloudappadmin": {
+      "description": "Eligible for Cloud Application Administrator through PIM. Its members review admin consent requests (ADR-0018, ADR-0019).",
+      "members": ["maintainer"]
+    }
+  }
+}
