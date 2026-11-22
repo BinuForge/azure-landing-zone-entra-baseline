@@ -5,8 +5,10 @@ sessions. Reports are still welcome, because the patterns here are meant to be c
 
 ## Reporting a vulnerability
 
-Use GitHub's private vulnerability reporting: the Security tab of this repository, then "Report a
-vulnerability". Please do not open a public issue for a security problem.
+Use GitHub's private vulnerability reporting:
+<https://github.com/BinuForge/azure-landing-zone-entra-baseline/security/advisories/new>
+(the Security tab of this repository, then "Report a vulnerability"). Please do not open a public issue
+for a security problem.
 
 Useful reports include:
 

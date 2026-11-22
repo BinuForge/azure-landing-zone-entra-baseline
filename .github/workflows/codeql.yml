@@ -1,0 +1,38 @@
+name: codeql
+
+# Static analysis of the code that runs: the ops agent (Python) and the GitHub Actions workflows.
+# Terraform is scanned by checkov in pr.yml. Findings go to the repository's Security tab.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "45 20 * * 2" # Wednesdays, 07:45 in Sydney during daylight saving
+
+# Deny everything by default; the job below grants only what CodeQL needs.
+permissions: {}
+
+jobs:
+  analyse:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write # upload results to code scanning
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, actions]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: github/codeql-action/init@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+
+      - uses: github/codeql-action/analyze@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
+        with:
+          category: /language:${{ matrix.language }}
