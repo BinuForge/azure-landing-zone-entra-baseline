@@ -47,9 +47,10 @@
 ## Decision
 
 1. Users consent to nothing (`permissionGrantPoliciesAssigned` is empty) and create no apps, security
-   groups or tenants. The admin consent request workflow follows with PIM: its reviewers will be the
-   members of a PIM-eligible group for Cloud Application Administrator in level 0 privileged, not named
-   people.
+   groups or tenants. They request consent instead: the admin consent workflow sends requests to the
+   members of `lab-grp-role-cloudappadmin`, a role-assignable group eligible for Cloud Application
+   Administrator through PIM (ADR-0019), read from level 0 privileged. No person is named, and the
+   workflow stays off until the group exists.
 2. Guests hold Restricted Guest User. Only admins and Guest Inviters invite, and nobody joins through a
    verified email address or self-service sign-up.
 3. Cross-tenant defaults are set explicitly, even where they match Microsoft's defaults, so drift shows in
@@ -65,7 +66,7 @@
 | Risk | Why it is accepted | Mitigation, or how we would notice |
 |---|---|---|
 | An account with only SMS or voice registered must register again | The point of the change | Before applying, check the daily admin and both break-glass accounts have Authenticator or a passkey (`docs/runbooks/entra-governance.md`) |
-| No consent request workflow until PIM | Its reviewers need the PIM group | One maintainer, who is an admin; users see a "needs admin approval" message |
+| A reviewer can see and deny requests without activating a role | Reviewing alone grants nothing | Approving needs Cloud Application Administrator, or Global Administrator for application permissions, both through PIM |
 | Synced passkeys (iCloud, Google) cannot be registered | They can be copied to devices the tenant never sees | Authenticator passkeys and security keys are device-bound |
 | Removing a resource does not undo its setting | Singletons have no delete | Revert by applying the old value first, then removing the resource |
 | The apply identity can weaken any of these settings | It needs the ReadWrite permissions to manage them | Apply needs approval in `lab-entra-l1-governance-apply`; tests pin every value |

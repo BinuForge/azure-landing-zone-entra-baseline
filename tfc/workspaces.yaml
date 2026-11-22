@@ -109,7 +109,7 @@ workspaces:
     project: entra-platform
     execution_mode: local
     description: Authorisation, consent, authentication methods and cross-tenant policies. Entra diagnostics are in bootstrap (ADR-0016).
-    reads: [entra-l0-org-prd]
+    reads: [entra-l0-org-prd, entra-l0-privileged-prd]
 
   - area: entra
     level: l1

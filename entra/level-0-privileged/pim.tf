@@ -38,7 +38,7 @@ check "standing_global_administrator_is_break_glass_only" {
 
   assert {
     condition     = try(toset(data.msgraph_resource.ga_schedules.output.standing) == toset(values(local.breakglass_ids)), false)
-    error_message = "Someone other than the break-glass accounts holds standing Global Administrator. Run pim/Set-Pim.ps1 -RemoveStandingAccess, or remove it in the portal."
+    error_message = "Someone other than the break-glass accounts holds standing Global Administrator. Remove it signed in as a break-glass account (docs/runbooks/entra-privileged.md)."
   }
 }
 

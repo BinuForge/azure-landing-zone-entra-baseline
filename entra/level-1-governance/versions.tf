@@ -7,6 +7,10 @@ terraform {
       source  = "microsoft/msgraph"
       version = "0.6.0"
     }
+    tfe = {
+      source  = "hashicorp/tfe"
+      version = "~> 0.83"
+    }
   }
 
   # Local execution: plans and applies run on GitHub Actions with OIDC. Organisation comes from

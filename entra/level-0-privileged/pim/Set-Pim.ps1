@@ -11,19 +11,17 @@
 
     Run -Plan first. It prints what would change and changes nothing. Every step is idempotent.
 
-    -RemoveStandingAccess removes the maintainer's permanent active assignments to the roles in pim.json,
-    after checking the maintainer is eligible for Global Administrator and both break-glass accounts still
-    hold it. Afterwards, activate Global Administrator in PIM before any Tier 0 run.
+    It does not remove anyone's standing access. PIM refuses to let an admin remove their own assignment
+    (AdminCannotRemoveSelf), so that is done in the portal, signed in as a break-glass account
+    (docs/runbooks/entra-privileged.md).
 
 .EXAMPLE
     ./Set-Pim.ps1 -Plan
     ./Set-Pim.ps1
-    ./Set-Pim.ps1 -RemoveStandingAccess
 #>
 [CmdletBinding()]
 param(
     [switch] $Plan,
-    [switch] $RemoveStandingAccess,
     [string] $Prefix = 'lab'
 )
 
@@ -55,7 +53,6 @@ Connect-MgGraph -NoWelcome -Scopes @(
     'RoleManagement.ReadWrite.Directory',
     'RoleManagementPolicy.ReadWrite.Directory',
     'RoleEligibilitySchedule.ReadWrite.Directory',
-    'RoleAssignmentSchedule.ReadWrite.Directory',
     'Group.ReadWrite.All',
     'User.Read.All'
 )
@@ -157,37 +154,6 @@ foreach ($roleName in $config.roles.Keys) {
                     expiration    = @{ type = 'afterDuration'; duration = $config.eligibilityDuration }
                 }
             } | Out-Null
-        }
-    }
-}
-
-if ($RemoveStandingAccess) {
-    Write-Host 'Standing access'
-    $ga = $config.roles['Global Administrator'].id
-    $filter = Get-Filter "principalId eq '$($me.id)' and roleDefinitionId eq '$ga'"
-    if (-not (Get-Graph "roleManagement/directory/roleEligibilitySchedules?`$filter=$filter")) {
-        throw 'The maintainer is not yet eligible for Global Administrator. Run without -RemoveStandingAccess first.'
-    }
-    $gaMembers = Get-Graph "directoryRoles(roleTemplateId='$ga')/members?`$select=id,mailNickname"
-    $breakglass = @($gaMembers | Where-Object { $_.mailNickname -like "$Prefix-emergency-*" })
-    if ($breakglass.Count -ne 2) { throw "Expected two break-glass Global Administrators, found $($breakglass.Count). Stopping." }
-
-    foreach ($roleName in $config.roles.Keys) {
-        $roleId = $config.roles[$roleName].id
-        $filter = Get-Filter "principalId eq '$($me.id)' and roleDefinitionId eq '$roleId'"
-        $standing = Get-Graph "roleManagement/directory/roleAssignmentSchedules?`$filter=$filter" |
-            Where-Object { $_.assignmentType -eq 'Assigned' -and $_.memberType -eq 'Direct' }
-        if ($standing) {
-            if (-not $Plan -and (Read-Host "Remove your standing $roleName? Type REMOVE") -ne 'REMOVE') { continue }
-            Invoke-Change "remove the maintainer's standing $roleName" {
-                Send-Graph POST "roleManagement/directory/roleAssignmentScheduleRequests" @{
-                    action           = 'adminRemove'
-                    justification    = $justification
-                    roleDefinitionId = $roleId
-                    directoryScopeId = '/'
-                    principalId      = $me.id
-                } | Out-Null
-            }
         }
     }
 }

@@ -34,23 +34,24 @@
    Application Administrator 8 hours), MFA and a justification on activation, and eligible assignments
    that expire after 365 days.
 2. `pim/Set-Pim.ps1` applies it with `Connect-MgGraph`, signed in as the maintainer, consenting for
-   themselves only. `-Plan` prints changes without making them. `-RemoveStandingAccess` removes the
-   maintainer's permanent assignments, only after checking they are eligible for Global Administrator and
-   both break-glass accounts still hold it.
+   themselves only. `-Plan` prints changes without making them. It never removes standing access: PIM
+   refuses self-removal (`AdminCannotRemoveSelf`), so another admin removes it in the portal.
 3. The maintainer is eligible for Global Administrator, Privileged Role Administrator and Security
    Administrator. `lab-grp-role-cloudappadmin`, a role-assignable group with the maintainer as member, is
    eligible for Cloud Application Administrator. Its members review admin consent requests.
 4. `pim.tf` checks, on every CI plan: only the break-glass accounts hold standing Global Administrator,
    every role has an eligible principal, and each role's activation rules match `pim.json`. Checks warn
    rather than fail, so a local plan works without PIM read access. Tests prove each check fires.
-5. Only the break-glass accounts keep standing Global Administrator. Tier 0 runs (bootstrap, Entra
-   bootstrap, level 0 privileged) start with activating Global Administrator in PIM.
+5. The target is that only the break-glass accounts keep standing Global Administrator, and Tier 0 runs
+   (bootstrap, Entra bootstrap, level 0 privileged) start with activating it in PIM. On 2026-11-22 the
+   maintainer kept their standing assignment for now; the CI plan warns about it on every run.
 
 ## Risks accepted
 
 | Risk | Why it is accepted | Mitigation, or how we would notice |
 |---|---|---|
 | The Graph PowerShell app holds a delegated grant with PIM scopes for the maintainer | Needed to call PIM | Consent for self only; the grant works only while the maintainer is signed in and holds the role |
+| The maintainer still holds standing Global Administrator (from 2026-11-22) | Removing it needs a break-glass sign-in, deferred by the maintainer | The CI plan warns on every run until it is removed |
 | No approver on activation | One maintainer | MFA and justification; activations are in the audit log |
 | PIM state is not in Terraform state | The provider cannot authenticate for it | Checks on every plan; tests prove the checks fire |
 | The maintainer's eligibility lapses after a year | Intended: renewal is a deliberate act | The eligibility check warns when it lapses |
