@@ -145,7 +145,7 @@ most, from people who can write tags, names, log lines or plans into data the mo
 | C-22 | The runner sends the GitHub run ID as `x-correlation-id`. The gateway logs it beside its own request ID, which it sends on to Foundry as `x-ms-client-request-id`. Foundry's usage log records neither, so a Foundry record is joined to its gateway call by time | Runner, APIM policy |
 | C-23 | The runner uses the Python standard library only, so nothing is installed; Dependabot for actions and providers | Runner, Dependabot |
 | C-24 | Azure Policy denies deployments without the approved guardrail policy, and models outside an allowlist | Terraform, level 1 |
-| C-25 | Drift detection on the AI services workspace | Workflow |
+| C-25 | Drift detection. `drift.yml` plans every persistent level nightly and opens an issue on drift. Level 3 is torn down between sessions, so while deployed it is checked by its own workflow on every merge, not nightly | Workflow |
 
 ## 6. Tests
 

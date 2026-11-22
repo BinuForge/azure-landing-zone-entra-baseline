@@ -1,0 +1,86 @@
+name: drift
+
+# Plans every level that persists between sessions, with its read-only identity, and opens or updates one
+# issue if any plan has changes or fails. A change outside code, such as a portal edit, shows here within
+# a day (threat model C-25, identity threat model IT-15). Levels 2 to 4 are torn down between sessions, so
+# their plans would always show creates; they are checked by their own workflows while deployed.
+on:
+  schedule:
+    - cron: "0 19 * * *" # 06:00 in Sydney during daylight saving
+  workflow_dispatch:
+
+# Deny everything by default; each job grants only what its called workflow needs.
+permissions: {}
+
+concurrency:
+  group: drift
+  cancel-in-progress: false
+
+jobs:
+  azure-l0:
+    uses: ./.github/workflows/_plan.yml
+    permissions: { contents: read, id-token: write, pull-requests: write }
+    with: { working_directory: azure/level-0-org, environment: lab-azure-l0-plan }
+    secrets: inherit
+
+  azure-l1:
+    uses: ./.github/workflows/_plan.yml
+    permissions: { contents: read, id-token: write, pull-requests: write }
+    with: { working_directory: azure/level-1-governance, environment: lab-azure-l1-plan }
+    secrets: inherit
+
+  entra-l0-org:
+    uses: ./.github/workflows/_plan.yml
+    permissions: { contents: read, id-token: write, pull-requests: write }
+    with: { working_directory: entra/level-0-org, environment: lab-entra-l0-org-plan }
+    secrets: inherit
+
+  entra-l0-privileged:
+    uses: ./.github/workflows/_plan.yml
+    permissions: { contents: read, id-token: write, pull-requests: write }
+    with: { working_directory: entra/level-0-privileged, environment: lab-entra-l0-privileged-plan }
+    secrets: inherit
+
+  entra-l1-governance:
+    uses: ./.github/workflows/_plan.yml
+    permissions: { contents: read, id-token: write, pull-requests: write }
+    with: { working_directory: entra/level-1-governance, environment: lab-entra-l1-governance-plan }
+    secrets: inherit
+
+  entra-l1-ca:
+    uses: ./.github/workflows/_plan.yml
+    permissions: { contents: read, id-token: write, pull-requests: write }
+    with: { working_directory: entra/level-1-ca, environment: lab-entra-l1-ca-plan }
+    secrets: inherit
+
+  report:
+    needs: [azure-l0, azure-l1, entra-l0-org, entra-l0-privileged, entra-l1-governance, entra-l1-ca]
+    if: always()
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update the drift issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          drifted=$(jq -r 'to_entries[] | select(.value.outputs.has_changes == "true") | .key' <<<"$NEEDS")
+          failed=$(jq -r 'to_entries[] | select(.value.result != "success") | .key' <<<"$NEEDS")
+          if [ -z "$drifted$failed" ]; then
+            echo "No drift in any persistent level."
+            exit 0
+          fi
+
+          body=$(printf 'Run: %s\n\nLevels with changes outside code:\n%s\n\nLevels whose plan failed:\n%s\n\nRead each plan in the run summary. Revert by running the level'"'"'s workflow, or change the code if the change was right (docs/runbooks/entra-recovery.md).\n' \
+            "$RUN_URL" "$(sed 's/^/- /' <<<"${drifted:-none}")" "$(sed 's/^/- /' <<<"${failed:-none}")")
+
+          issue=$(gh issue list --repo "$REPO" --state open --search 'in:title "Drift detected"' --json number --jq '.[0].number // empty')
+          if [ -n "$issue" ]; then
+            gh issue comment "$issue" --repo "$REPO" --body "$body"
+          else
+            gh issue create --repo "$REPO" --title "Drift detected" --body "$body"
+          fi
+          echo "::warning::Drift or a failed plan. See the drift issue."
