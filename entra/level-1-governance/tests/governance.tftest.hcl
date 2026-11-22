@@ -136,7 +136,7 @@ run "consent_requests_go_to_the_pim_group" {
     condition = (
       length(msgraph_update_resource.admin_consent) == 1 &&
       msgraph_update_resource.admin_consent[0].body.isEnabled == true &&
-      one(msgraph_update_resource.admin_consent[0].body.reviewers).query == "/groups/00000000-0000-0000-0000-0000000000d1/transitiveMembers"
+      one(msgraph_update_resource.admin_consent[0].body.reviewers).query == "/v1.0/groups/00000000-0000-0000-0000-0000000000d1/transitiveMembers/microsoft.graph.user"
     )
     error_message = "Requests are reviewed by the members of the PIM group, and no named person."
   }
