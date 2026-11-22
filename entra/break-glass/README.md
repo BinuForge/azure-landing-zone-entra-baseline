@@ -26,7 +26,7 @@ still in the expected state.
 | Type | Cloud-only member accounts | No dependency on on-premises sync |
 | Role | Global Administrator, permanent and active | PIM may be the thing that is broken, so the role is not eligible-only |
 | Licence | None | Not needed for the role |
-| Authentication | Now: Microsoft Authenticator and SMS. Target: one FIDO2 security key per account, stored apart (see open items) | MFA is mandatory for admin portals; a key cannot be phished |
+| Authentication | Now: Microsoft Authenticator (SMS and voice are off tenant-wide since ADR-0018). Target: one FIDO2 security key per account, stored apart (see open items) | MFA is mandatory for admin portals; a key cannot be phished |
 | Password | 32 random characters, on paper only, each stored in a different place | Not in a password manager on a daily device |
 
 The domain and object IDs are not committed. The names follow the convention and are public here:
@@ -64,10 +64,10 @@ Record each test in `evidence/` with the date and result only, never a name or I
 
 ## Open items
 
-- No FIDO2 security keys are registered yet. Both accounts use Microsoft Authenticator and SMS. SMS can
-  be taken over by SIM swap, and both methods depend on a phone, so this is weaker than Microsoft's
-  guidance. It is an accepted gap for the lab, closed before any Conditional Access policy is switched
-  from report-only to on: register keys, then remove SMS.
+- No FIDO2 security keys are registered yet. Both accounts use Microsoft Authenticator; SMS and voice
+  have been off tenant-wide since 2026-11-22 (ADR-0018). Authenticator depends on a phone, so this is
+  weaker than Microsoft's guidance. It is an accepted gap for the lab, closed before any Conditional
+  Access policy is switched from report-only to on: register a key for each account.
 - The account that signed up for the Azure free account is a guest with Global Administrator. It is
   probably also the billing owner, so it is not deleted. Before the Entra baseline: confirm the daily
   admin has Owner on the subscription, then remove Global Administrator from the guest and keep it for
