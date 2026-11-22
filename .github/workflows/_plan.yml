@@ -85,13 +85,22 @@ jobs:
         env:
           ENVIRONMENT: ${{ inputs.environment }}
           DESTROY_FLAG: ${{ inputs.destroy && '-destroy' || '' }}
+          CHANGES_FILTER: >-
+            [(.resource_changes[]? | select(.change.actions != ["no-op"] and .change.actions != ["read"])),
+             (.output_changes // {} | to_entries[] | select(.value.actions != ["no-op"]))] | length
         run: |
           set +e
           terraform plan -input=false -lock-timeout=5m -detailed-exitcode $DESTROY_FLAG -out=tfplan
           code=$?
           set -e
           if [ "$code" -eq 1 ]; then exit 1; fi
-          echo "has_changes=$([ "$code" -eq 2 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          # Exit code 2 also covers data sources re-read at apply to verify a failed check block, which
+          # change nothing. Count only resource and output changes.
+          changes=0
+          if [ "$code" -eq 2 ]; then
+            changes=$(terraform show -json tfplan | jq "$CHANGES_FILTER")
+          fi
+          echo "has_changes=$([ "$changes" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "artifact=tfplan-${ENVIRONMENT}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
 
       # Only actions and addresses leave the runner. The JSON plan holds values in clear text.
@@ -100,7 +109,7 @@ jobs:
           DIR: ${{ inputs.working_directory }}
         run: |
           terraform show -json tfplan | jq -r --arg dir "$DIR" '
-            [.resource_changes[]? | select(.change.actions != ["no-op"])
+            [.resource_changes[]? | select(.change.actions != ["no-op"] and .change.actions != ["read"])
               | "| \(.change.actions | join(", ")) | `\(.address)` |"] as $rows
             | "<!-- plan:\($dir) -->\n### Plan: `\($dir)`\n\n"
               + (if ($rows | length) == 0 then "No changes."
