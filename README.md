@@ -2,6 +2,7 @@
 
 [![PR gates](https://github.com/BinuForge/azure-landing-zone-entra-baseline/actions/workflows/pr.yml/badge.svg)](https://github.com/BinuForge/azure-landing-zone-entra-baseline/actions/workflows/pr.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/BinuForge/azure-landing-zone-entra-baseline/badge)](https://scorecard.dev/viewer/?uri=github.com/BinuForge/azure-landing-zone-entra-baseline)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16995/badge)](https://www.bestpractices.dev/projects/16995)
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 
 A right-sized Azure landing zone, an Entra ID security baseline and a secured AI services landing zone,
