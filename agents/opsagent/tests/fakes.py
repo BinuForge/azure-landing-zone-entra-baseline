@@ -4,9 +4,16 @@ from __future__ import annotations
 
 import json
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import urlparse
 
 from opsagent.config import Config
 from opsagent.transport import Client
+
+
+def on_host(url: str, domain: str) -> bool:
+    """True if the URL's host is the domain or a subdomain of it, as the real client would see it."""
+    host = urlparse(url).hostname or ""
+    return host == domain or host.endswith("." + domain)
 
 SUBSCRIPTION = "11111111-2222-3333-4444-555555555555"
 TENANT = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
@@ -91,7 +98,7 @@ class FakeAzure:
         def ok(data: Any) -> Tuple[int, Dict[str, str], bytes]:
             return 200, {}, json.dumps(data).encode()
 
-        if "azure-api.net" in url:
+        if on_host(url, "azure-api.net"):
             status, data = self.gateway.pop(0)
             return status, {}, json.dumps(data).encode()
         if "/resources?" in url:
@@ -116,9 +123,9 @@ class FakeAzure:
             )
         if "Microsoft.OperationalInsights/workspaces/" in url and url.endswith("api-version=2023-09-01"):
             return ok({"properties": {"customerId": "99999999-8888-7777-6666-555555555555"}})
-        if "api.loganalytics.io" in url:
+        if on_host(url, "api.loganalytics.io"):
             return ok({"tables": [{"columns": [{"name": "DataType"}, {"name": "gb"}], "rows": [["AzureDiagnostics", 0.1234], ["AzureActivity", 0.0021]]}]})
-        if "blob.core.windows.net" in url:
+        if on_host(url, "blob.core.windows.net"):
             return 201, {}, b""
         return 404, {}, b"{}"
 
