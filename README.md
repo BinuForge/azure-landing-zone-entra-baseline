@@ -5,8 +5,8 @@
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16995/badge)](https://www.bestpractices.dev/projects/16995)
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 
-A right-sized Azure landing zone, an Entra ID security baseline and a secured AI services landing zone,
-for a regulated organisation of 300 to 1,000 staff. Everything is Terraform, delivered through gated
+A right-sized Azure landing zone, an Entra ID security baseline and a secured AI services landing zone
+with a prompt-injection-tested ops agent, for a regulated organisation of 300 to 1,000 staff. Everything is Terraform, delivered through gated
 pipelines with no stored secrets, deployed to a lab tenant and tested live, with signed evidence.
 
 New here? Read [the story](docs/architecture/story.md): the whole design in plain language, for anyone in
