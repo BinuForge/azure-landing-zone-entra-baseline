@@ -39,6 +39,29 @@ Administrators included, until they hold a role scoped to the unit. To change on
 A Global Administrator can also remove an object from the unit, which removes its protection. Doing so
 is an incident unless a pull request explains it.
 
+## PIM (`pim/`)
+
+PIM is applied with a script, signed in as you, because the Azure CLI token cannot carry PIM's scopes
+(ADR-0019). The desired state is `pim/pim.json`. Run from `entra/level-0-privileged/pim/` in PowerShell:
+
+```powershell
+Install-Module Microsoft.Graph.Authentication -Scope CurrentUser   # once
+./Set-Pim.ps1 -Plan                    # prints what would change, changes nothing
+./Set-Pim.ps1                          # rules, eligibility, the reviewer group
+./Set-Pim.ps1 -RemoveStandingAccess    # then removes your permanent assignments
+```
+
+At the consent prompt, do not tick "Consent on behalf of your organisation".
+
+Before `-RemoveStandingAccess`, activate Global Administrator once in PIM (Entra admin centre, Identity
+Governance, Privileged Identity Management, My roles) to prove eligibility works. Afterwards, every Tier 0
+run starts with activating it: bootstrap, Entra bootstrap and this level. Sign out and in again, or
+`az logout` and `az login`, so the token carries the activated role.
+
+The CI plan checks the result and warns if anything differs: someone other than break-glass holds
+standing Global Administrator, a role has no eligible assignment, or activation rules differ from
+`pim.json`.
+
 ## If a break-glass account is used
 
 Follow `entra/break-glass/README.md`. Resetting its password needs it out of the unit first, because no
@@ -50,4 +73,7 @@ role assignable to a unit can reset a Global Administrator's password.
 |---|---|---|
 | `Insufficient privileges` changing the exclusion group | It is in the restricted unit | Assign Groups Administrator on the unit first (above) |
 | `Instance cannot be destroyed` | `prevent_destroy` on the unit and the exclusion group | Intended. Removing them is a reviewed change to the code, never a `destroy` |
+| `PermissionScopeNotGranted` on a PIM call | The Azure CLI token, not Graph PowerShell | Use `pim/Set-Pim.ps1`, never Terraform, for PIM |
+| Plan warns `standing Global Administrator` | You, or the 2018 sign-up account, still hold it permanently | `./Set-Pim.ps1 -RemoveStandingAccess`, and remove it from the sign-up account in the portal |
+| `Insufficient privileges` on a Tier 0 run after PIM | Global Administrator is not activated, or the token predates activation | Activate in PIM, then `az logout` and `az login` |
 | CI plan fails with `AccessDenied` on `directoryRoles` | The plan identity lost `RoleManagement.Read.Directory` | Check `entra/bootstrap/graph.yaml` and run the Entra bootstrap |

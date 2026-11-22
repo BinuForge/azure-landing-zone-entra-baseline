@@ -34,6 +34,9 @@ resource "azuread_group" "breakglass_exclusion" {
 
   lifecycle {
     prevent_destroy = true
+    # Unit membership is managed by msgraph_resource.emergency_au_member. Without this, azuread reads the
+    # membership as drift and would take the group out of the restricted unit on the next apply.
+    ignore_changes = [administrative_unit_ids]
   }
 }
 

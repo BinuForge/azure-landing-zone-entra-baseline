@@ -31,7 +31,7 @@ Never run it from CI, never `terraform destroy` it, and never add a resource tha
 ## Prerequisites
 
 - Tools from `docs/runbooks/local-setup.md`, signed in: `az login`, `gh auth login`, `terraform login`.
-- Global Administrator in Entra, and Owner on the subscription.
+- Global Administrator in Entra, activated in PIM (ADR-0019), and Owner on the subscription.
 - `bootstrap/env/lab.auto.tfvars`, copied from `env/example.auto.tfvars` and filled in. It is git-ignored;
   check with `git check-ignore -v bootstrap/env/lab.auto.tfvars`.
 

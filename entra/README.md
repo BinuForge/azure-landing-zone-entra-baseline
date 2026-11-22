@@ -4,7 +4,7 @@
 |---|---|---|
 | - | `bootstrap/` | The Entra pipeline identities, their Graph permissions (`graph.yaml`) and GitHub environments. Run by a person (ADR-0016) |
 | 0 | `level-0-org/` | Persona groups with dynamic membership (internals, guests), owned by the level's apply identity. Administrators are targeted by directory role, not by group |
-| 0 | `level-0-privileged/` | Tier 0: the restricted administrative unit, Conditional Access exclusion groups, custom roles, role-assignable groups, PIM. CI plans it; the maintainer applies it |
+| 0 | `level-0-privileged/` | Tier 0: the restricted administrative unit, the Conditional Access exclusion group, and PIM (`pim/`, applied by a script as the maintainer and checked on every plan, ADR-0019). CI plans it; the maintainer applies it |
 | 1 | `level-1-governance/` | Authorisation and consent defaults, authentication methods (passkeys on, SMS and voice off), cross-tenant defaults (ADR-0018) |
 | 1 | `level-1-ca/` | Named location and the Conditional Access baseline, report-only until each policy is enforced (ADR-0017) |
 | - | `break-glass/` | README and checks only; the accounts are created by hand |
@@ -15,4 +15,4 @@ permissions or add credentials. Entra's diagnostic settings are in the Azure boo
 logs to a security workspace only the maintainer reads.
 
 Built so far: `bootstrap/`, `level-0-org/`, `level-0-privileged/`, `level-1-governance/`, `level-1-ca/` and
-`break-glass/`. PIM and custom roles follow.
+`break-glass/`. Custom roles and Maester tests follow.
