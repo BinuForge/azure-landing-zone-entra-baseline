@@ -23,7 +23,8 @@ resource "msgraph_update_resource" "admin_consent" {
     remindersEnabled      = true
     requestDurationInDays = 14
     reviewers = [{
-      query     = "/groups/${local.consent_reviewer_group}/transitiveMembers"
+      # Written as Graph stores it; any other form shows as a change on every plan.
+      query     = "/v1.0/groups/${local.consent_reviewer_group}/transitiveMembers/microsoft.graph.user"
       queryType = "MicrosoftGraph"
       queryRoot = null
     }]
