@@ -13,32 +13,10 @@ IT.
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  pr["Pull request<br/>offline gates and tests"] --> plan["Plan<br/>read-only identity"]
-  plan --> ok{"Person<br/>approves"}
-  ok --> apply["Apply the saved plan<br/>one level per identity"]
-  apply --> azure
-  apply --> entra
-  t0["Tier 0, run by a person:<br/>bootstrap, privileged level, PIM"] -.-> azure
-  t0 -.-> entra
-
-  subgraph azure["Azure"]
-    direction TB
-    a0["0 Management groups"] --> a1["1 Policy"] --> a2["2 Logs, hub network, DNS"] --> a3["3 AI services<br/>gateway, Foundry, private only"] --> a4["4 Ops agent<br/>read only"]
-  end
-
-  subgraph entra["Entra ID"]
-    direction TB
-    e0["0 Personas, break-glass,<br/>restricted unit, PIM"] --> e1["1 Conditional Access,<br/>tenant defaults, passkeys"]
-  end
-
-  azure --> ev["Signed evidence"]
-  drift["Nightly drift plan"] -.-> azure
-  drift -.-> entra
-```
+![Every change goes through code, a plan and a person. A pull request is checked, planned by a read-only identity, approved by a person and applied, deploying Azure levels 0 to 4 and Entra ID levels 0 and 1. Tier 0 is run by a person, never a pipeline.](docs/architecture/architecture.png)
 
 More views (estate, identity tiers, change flow) are in the [architecture overview](docs/architecture/overview.md).
+The image's source is [`architecture.svg`](docs/architecture/architecture.svg).
 
 ## Start here: five things worth a look
 

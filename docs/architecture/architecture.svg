@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" font-family="Avenir Next, Helvetica Neue, Arial, sans-serif">
+  <title>Architecture: Azure landing zone and Entra ID baseline as code</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c99a3e"/>
+    </marker>
+    <marker id="arrow-mist" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8f9ab3"/>
+    </marker>
+    <style>
+      .eyebrow { fill: #c99a3e; font-size: 14px; font-weight: 600; letter-spacing: 3.5px; }
+      .title { fill: #ffffff; font-size: 27px; font-weight: 700; }
+      .sub { fill: #bec8dc; font-size: 15.5px; font-weight: 500; }
+      .label { fill: #c99a3e; font-size: 13px; font-weight: 600; letter-spacing: 3px; }
+      .box { fill: #243150; }
+      .panel { fill: #1f2a46; stroke: #33416a; stroke-width: 1.5; }
+      .bar { fill: #2b3a60; }
+      .h { fill: #ffffff; font-size: 17px; font-weight: 700; }
+      .ph { fill: #ffffff; font-size: 23px; font-weight: 700; }
+      .d { fill: #bec8dc; font-size: 14.5px; font-weight: 500; }
+      .num { fill: #18213a; font-size: 14px; font-weight: 700; }
+      .gold { fill: #c99a3e; }
+      .chip { fill: #243150; stroke: #c99a3e; stroke-width: 1.2; }
+      .chipt { fill: #ffffff; font-size: 15px; font-weight: 600; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="800" rx="22" fill="#18213a"/>
+  <rect x="0" y="0" width="1200" height="7" fill="#c99a3e" rx="3"/>
+
+  <text x="40" y="48" class="eyebrow">ARCHITECTURE</text>
+  <text x="40" y="84" class="title">Every change goes through code, a plan and a person</text>
+  <text x="40" y="110" class="sub">Azure landing zone and Entra ID baseline as Terraform, deployed to a lab tenant and tested live</text>
+
+  <!-- Delivery column -->
+  <text x="40" y="146" class="label">DELIVERY</text>
+  <g>
+    <rect x="40" y="160" width="300" height="80" rx="12" class="box"/>
+    <rect x="40" y="172" width="5" height="56" class="gold"/>
+    <circle cx="74" cy="190" r="13" class="gold"/><text x="74" y="195" text-anchor="middle" class="num">1</text>
+    <text x="98" y="196" class="h">Pull request</text>
+    <text x="62" y="224" class="d">Lint, scan, tests with mock providers</text>
+  </g>
+  <line x1="190" y1="240" x2="190" y2="258" stroke="#8f9ab3" stroke-width="2" marker-end="url(#arrow-mist)"/>
+  <g>
+    <rect x="40" y="262" width="300" height="80" rx="12" class="box"/>
+    <rect x="40" y="274" width="5" height="56" class="gold"/>
+    <circle cx="74" cy="292" r="13" class="gold"/><text x="74" y="297" text-anchor="middle" class="num">2</text>
+    <text x="98" y="298" class="h">Plan</text>
+    <text x="62" y="326" class="d">Read-only identity, OIDC, no secrets</text>
+  </g>
+  <line x1="190" y1="342" x2="190" y2="360" stroke="#8f9ab3" stroke-width="2" marker-end="url(#arrow-mist)"/>
+  <g>
+    <rect x="40" y="364" width="300" height="80" rx="12" class="box"/>
+    <rect x="40" y="376" width="5" height="56" class="gold"/>
+    <circle cx="74" cy="394" r="13" class="gold"/><text x="74" y="399" text-anchor="middle" class="num">3</text>
+    <text x="98" y="400" class="h">A person approves</text>
+    <text x="62" y="428" class="d">The plan is saved and encrypted</text>
+  </g>
+  <line x1="190" y1="444" x2="190" y2="462" stroke="#8f9ab3" stroke-width="2" marker-end="url(#arrow-mist)"/>
+  <g>
+    <rect x="40" y="466" width="300" height="80" rx="12" class="box"/>
+    <rect x="40" y="478" width="5" height="56" class="gold"/>
+    <circle cx="74" cy="496" r="13" class="gold"/><text x="74" y="501" text-anchor="middle" class="num">4</text>
+    <text x="98" y="502" class="h">Apply</text>
+    <text x="62" y="530" class="d">Exactly that plan, one level each</text>
+  </g>
+
+  <!-- Deploy bus: from Apply up and across to both areas -->
+  <path d="M340,506 H368 V136 H985" fill="none" stroke="#c99a3e" stroke-width="2.2"/>
+  <line x1="600" y1="136" x2="600" y2="156" stroke="#c99a3e" stroke-width="2.2" marker-end="url(#arrow)"/>
+  <line x1="985" y1="136" x2="985" y2="156" stroke="#c99a3e" stroke-width="2.2" marker-end="url(#arrow)"/>
+
+  <!-- Drift -->
+  <rect x="40" y="580" width="300" height="80" rx="12" fill="none" stroke="#8f9ab3" stroke-width="1.6" stroke-dasharray="6 5"/>
+  <text x="62" y="612" class="h">Nightly drift check</text>
+  <text x="62" y="640" class="d">Opens an issue on manual change</text>
+
+  <!-- Azure panel -->
+  <rect x="400" y="160" width="400" height="400" rx="16" class="panel"/>
+  <text x="424" y="198" class="ph">Azure</text>
+  <text x="424" y="222" class="d">Landing zone layout, one subscription</text>
+
+  <g class="levels-azure">
+    <rect x="420" y="240" width="360" height="54" rx="10" class="bar"/>
+    <rect x="436" y="256" width="24" height="24" rx="6" class="gold"/><text x="448" y="273" text-anchor="middle" class="num">0</text>
+    <text x="474" y="262" class="h">Management groups</text><text x="474" y="284" class="d">Landing zone hierarchy</text>
+
+    <rect x="420" y="302" width="360" height="54" rx="10" class="bar"/>
+    <rect x="436" y="318" width="24" height="24" rx="6" class="gold"/><text x="448" y="335" text-anchor="middle" class="num">1</text>
+    <text x="474" y="324" class="h">Policy</text><text x="474" y="346" class="d">Deny rules, MCSB audit</text>
+
+    <rect x="420" y="364" width="360" height="54" rx="10" class="bar"/>
+    <rect x="436" y="380" width="24" height="24" rx="6" class="gold"/><text x="448" y="397" text-anchor="middle" class="num">2</text>
+    <text x="474" y="386" class="h">Platform</text><text x="474" y="408" class="d">Logs, hub network, private DNS</text>
+
+    <rect x="420" y="426" width="360" height="54" rx="10" class="bar"/>
+    <rect x="436" y="442" width="24" height="24" rx="6" class="gold"/><text x="448" y="459" text-anchor="middle" class="num">3</text>
+    <text x="474" y="448" class="h">AI services</text><text x="474" y="470" class="d">Private Foundry behind a gateway</text>
+
+    <rect x="420" y="488" width="360" height="54" rx="10" class="bar"/>
+    <rect x="436" y="504" width="24" height="24" rx="6" class="gold"/><text x="448" y="521" text-anchor="middle" class="num">4</text>
+    <text x="474" y="510" class="h">AI ops agent</text><text x="474" y="532" class="d">Read-only, prompt-injection tested</text>
+  </g>
+
+  <!-- Entra panel -->
+  <rect x="820" y="160" width="340" height="400" rx="16" class="panel"/>
+  <text x="844" y="198" class="ph">Entra ID</text>
+  <text x="844" y="222" class="d">Identity baseline</text>
+
+  <g class="levels-entra">
+    <rect x="840" y="240" width="300" height="54" rx="10" class="bar"/>
+    <rect x="856" y="256" width="24" height="24" rx="6" class="gold"/><text x="868" y="273" text-anchor="middle" class="num">0</text>
+    <text x="894" y="262" class="h">Persona groups</text><text x="894" y="284" class="d">Internals and guests, by rule</text>
+
+    <rect x="840" y="302" width="300" height="54" rx="10" class="bar"/>
+    <rect x="856" y="318" width="24" height="24" rx="6" class="gold"/><text x="868" y="335" text-anchor="middle" class="num">0</text>
+    <text x="894" y="324" class="h">Break-glass</text><text x="894" y="346" class="d">Restricted unit, checked</text>
+
+    <rect x="840" y="364" width="300" height="54" rx="10" class="bar"/>
+    <rect x="856" y="380" width="24" height="24" rx="6" class="gold"/><text x="868" y="397" text-anchor="middle" class="num">0</text>
+    <text x="894" y="386" class="h">PIM</text><text x="894" y="408" class="d">Eligible roles, 4-hour limit</text>
+
+    <rect x="840" y="426" width="300" height="54" rx="10" class="bar"/>
+    <rect x="856" y="442" width="24" height="24" rx="6" class="gold"/><text x="868" y="459" text-anchor="middle" class="num">1</text>
+    <text x="894" y="448" class="h">Conditional Access</text><text x="894" y="470" class="d">8 policies, report-only first</text>
+
+    <rect x="840" y="488" width="300" height="54" rx="10" class="bar"/>
+    <rect x="856" y="504" width="24" height="24" rx="6" class="gold"/><text x="868" y="521" text-anchor="middle" class="num">1</text>
+    <text x="894" y="510" class="h">Tenant defaults</text><text x="894" y="532" class="d">No user consent, passkeys</text>
+  </g>
+
+  <!-- Tier 0 -->
+  <rect x="400" y="580" width="760" height="80" rx="12" fill="none" stroke="#c99a3e" stroke-width="1.8" stroke-dasharray="7 5"/>
+  <line x1="600" y1="580" x2="600" y2="564" stroke="#c99a3e" stroke-width="1.8" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+  <line x1="985" y1="580" x2="985" y2="564" stroke="#c99a3e" stroke-width="1.8" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+  <text x="424" y="612" class="h" fill="#c99a3e" style="fill:#c99a3e">Tier 0: run by a person, never a pipeline</text>
+  <text x="424" y="640" class="d">Bootstrap creates every pipeline identity  ·  privileged level  ·  PIM script</text>
+
+  <!-- Outputs -->
+  <text x="40" y="706" class="label">OUTPUTS</text>
+  <rect x="40" y="720" width="352" height="48" rx="24" class="chip"/>
+  <text x="216" y="750" text-anchor="middle" class="chipt">Signed evidence from live runs</text>
+  <rect x="424" y="720" width="352" height="48" rx="24" class="chip"/>
+  <text x="600" y="750" text-anchor="middle" class="chipt">Entra logs to a security workspace</text>
+  <rect x="808" y="720" width="352" height="48" rx="24" class="chip"/>
+  <text x="984" y="750" text-anchor="middle" class="chipt">19 ADRs, threat models, control map</text>
+</svg>
