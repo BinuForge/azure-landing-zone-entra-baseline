@@ -10,8 +10,8 @@ source "$(dirname "$0")/lib.sh"
 OUT="${1:?results file}"
 SUB="${AZURE_SUBSCRIPTION_ID:?set AZURE_SUBSCRIPTION_ID}"
 RG="/subscriptions/$SUB/resourceGroups/$PREFIX-rg-aiservices-prd-ae"
-ACCOUNT="$RG/providers/Microsoft.CognitiveServices/accounts/$PREFIX-ais-aiservices-prd-ae"
-APIM="$RG/providers/Microsoft.ApiManagement/service/$PREFIX-apim-aiservices-prd-ae"
+ACCOUNT="$RG/providers/Microsoft.CognitiveServices/accounts/$FOUNDRY_NAME"
+APIM="$RG/providers/Microsoft.ApiManagement/service/$APIM_NAME"
 
 # Entra issues gateway tokens only to identities assigned AI.Invoke (app_role_assignment_required).
 if out="$(az account get-access-token --resource "$AUDIENCE" -o none 2>&1)"; then

@@ -22,7 +22,11 @@ variable "github_oidc_subject_prefix" {
 variable "github_owner" {
   description = "GitHub account that owns the repository."
   type        = string
-  default     = "BinuForge"
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$", var.github_owner))
+    error_message = "github_owner must be a GitHub account name."
+  }
 }
 
 variable "github_repository" {
@@ -34,7 +38,11 @@ variable "github_repository" {
 variable "github_apply_reviewer" {
   description = "GitHub user who must approve every apply (ADR-0006)."
   type        = string
-  default     = "BinuForge"
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$", var.github_apply_reviewer))
+    error_message = "github_apply_reviewer must be a GitHub user name."
+  }
 }
 
 variable "hcp_organization" {

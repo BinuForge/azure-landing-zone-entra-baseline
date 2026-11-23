@@ -3,6 +3,16 @@
 Notable changes, newest first. Each entry links the pull requests. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 2026-11-23: Deploy your own copy
+
+- [QUICKSTART](QUICKSTART.md): deploy the lab into a new trial tenant and subscription, learn, then
+  tear it down. A read-only preflight script checks tools, sign-ins, the trial, the tenant and name
+  availability (ADR-0020).
+- One `unique_suffix` (repository variable `LAB_UNIQUE_SUFFIX`) for the three names that must be unique
+  across Azure. Empty for the original lab, so its plans do not change.
+- The GitHub owner and apply reviewer are required inputs, not defaults; helper scripts take the
+  repository from the clone.
+
 ## 2026-11-22: Entra baseline, part 2, and assurance
 
 - Tenant defaults: users consent to nothing, restricted guests, admin-only invitations, explicit

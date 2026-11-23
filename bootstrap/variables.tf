@@ -19,6 +19,17 @@ variable "prefix" {
   }
 }
 
+variable "unique_suffix" {
+  description = "Up to 3 lowercase letters or digits added to the names that must be unique across Azure (docs/naming.md). Empty for the original lab; set one when you deploy your own copy (QUICKSTART.md)."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = can(regex("^[a-z0-9]{0,3}$", var.unique_suffix))
+    error_message = "unique_suffix must be 0 to 3 lowercase letters or digits."
+  }
+}
+
 variable "location" {
   description = "Azure region for the lab (docs/naming.md)."
   type        = string
@@ -43,7 +54,11 @@ variable "github_oidc_subject_prefix" {
 variable "github_owner" {
   description = "GitHub account that owns the repository."
   type        = string
-  default     = "BinuForge"
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$", var.github_owner))
+    error_message = "github_owner must be a GitHub account name."
+  }
 }
 
 variable "github_repository" {
@@ -55,7 +70,11 @@ variable "github_repository" {
 variable "github_apply_reviewer" {
   description = "GitHub user who must approve every apply (ADR-0006)."
   type        = string
-  default     = "BinuForge"
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$", var.github_apply_reviewer))
+    error_message = "github_apply_reviewer must be a GitHub user name."
+  }
 }
 
 variable "hcp_organization" {

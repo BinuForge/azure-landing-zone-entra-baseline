@@ -8,7 +8,7 @@ set -euo pipefail
 RUN_ID="${1:?run id of the evidence workflow}"
 LABEL="${2:?label used for that run}"
 WORKFLOW="${3:-evidence.yml}"
-REPO="${REPO:-BinuForge/azure-landing-zone-entra-baseline}"
+REPO="${REPO:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}"
 DEST="evidence/$LABEL"
 
 if [ -e "$DEST" ]; then

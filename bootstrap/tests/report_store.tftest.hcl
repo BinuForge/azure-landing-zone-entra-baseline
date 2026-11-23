@@ -50,6 +50,8 @@ variables {
   budget_contact_emails      = ["alerts@example.com"]
   github_oidc_subject_prefix = "repo:example@1/repo@2"
   hcp_organization           = "example-org"
+  github_owner               = "example"
+  github_apply_reviewer      = "example"
 }
 
 run "report_store_accepts_entra_identities_only" {
@@ -95,5 +97,32 @@ run "runner_can_only_add_reports" {
   assert {
     condition     = azurerm_role_assignment.pipeline["azure-l4-opsagent-run/report-writer/reports"].principal_type == "ServicePrincipal" && azurerm_role_assignment.report_reader.principal_type == "User"
     error_message = "The runner writes; only the maintainer reads."
+  }
+}
+
+run "unique_suffix_reaches_the_storage_name_only" {
+  command = plan
+
+  variables {
+    unique_suffix = "x7k"
+  }
+
+  assert {
+    condition     = azurerm_storage_account.reports.name == "labstreportsprdae01x7k"
+    error_message = "The report store name must end with the unique suffix (docs/naming.md)."
+  }
+
+  assert {
+    condition     = azurerm_resource_group.this["bootstrap"].name == "lab-rg-bootstrap-prd-ae"
+    error_message = "Names that are unique only inside the subscription must not take the suffix."
+  }
+}
+
+run "original_lab_names_are_unchanged" {
+  command = plan
+
+  assert {
+    condition     = azurerm_storage_account.reports.name == "labstreportsprdae01"
+    error_message = "With no suffix, the report store keeps its original name, so the original lab plans no change."
   }
 }

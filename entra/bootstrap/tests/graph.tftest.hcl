@@ -25,6 +25,8 @@ mock_provider "github" {
 variables {
   github_oidc_subject_prefix = "repo:example@1/repo@2"
   hcp_organization           = "example-org"
+  github_owner               = "example"
+  github_apply_reviewer      = "example"
 }
 
 run "every_grant_names_a_known_identity_and_an_allowed_permission" {

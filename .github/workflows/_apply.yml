@@ -54,6 +54,9 @@ jobs:
       # Only Entra level 0 declares this variable; other levels ignore it, and environments without the
       # secret leave it empty. Its groups must be owned by its apply identity (entra/bootstrap).
       TF_VAR_apply_object_id: ${{ secrets.APPLY_OBJECT_ID }}
+      # Level 3 adds this to the names that must be unique across Azure; other levels ignore it. Unset in
+      # the original lab, so its names do not change (docs/naming.md, QUICKSTART.md).
+      TF_VAR_unique_suffix: ${{ vars.LAB_UNIQUE_SUFFIX }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
