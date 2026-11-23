@@ -1,0 +1,20 @@
+[
+  {
+    "location": "australiaeast",
+    "name": "NetworkWatcher_australiaeast",
+    "resourceGroup": "networkwatcherrg",
+    "type": "microsoft.network/networkwatchers"
+  },
+  {
+    "location": "australiaeast",
+    "name": "lab-log-security-prd-ae",
+    "resourceGroup": "lab-rg-bootstrap-prd-ae",
+    "type": "microsoft.operationalinsights/workspaces"
+  },
+  {
+    "location": "australiaeast",
+    "name": "labstreportsprdae01",
+    "resourceGroup": "lab-rg-bootstrap-prd-ae",
+    "type": "microsoft.storage/storageaccounts"
+  }
+]
