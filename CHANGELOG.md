@@ -12,6 +12,8 @@ Notable changes, newest first. Each entry links the pull requests. The format fo
   across Azure. Empty for the original lab, so its plans do not change.
 - The GitHub owner and apply reviewer are required inputs, not defaults; helper scripts take the
   repository from the clone.
+- [Rebuild in a new tenant](docs/runbooks/rebuild-in-new-tenant.md): move this repository to a new tenant
+  and subscription with a new HCP organisation, keeping the old one as a record. ADR-0004 stands.
 
 ## 2026-11-22: Entra baseline, part 2, and assurance
 

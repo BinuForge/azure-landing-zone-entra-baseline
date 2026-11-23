@@ -3,6 +3,9 @@
 Deploy the whole lab into your own trial tenant and subscription, learn and test with it, then tear it
 down. The runbooks in [`docs/runbooks/`](docs/runbooks/) hold the detail; this page puts them in order.
 
+Already running this repository and moving it to a new tenant? Use
+[rebuild in a new tenant](docs/runbooks/rebuild-in-new-tenant.md) instead.
+
 > **Use a new trial tenant only. Never a tenant people rely on.**
 > The Entra levels change sign-in for everyone in the tenant: SMS and voice are switched off, users can
 > no longer consent to apps, Conditional Access policies are created, and PIM rules are set. In a work
