@@ -38,6 +38,8 @@ variables {
   budget_contact_emails      = ["alerts@example.com"]
   github_oidc_subject_prefix = "repo:example@1/repo@2"
   hcp_organization           = "example-org"
+  github_owner               = "example"
+  github_apply_reviewer      = "example"
 }
 
 run "one_plan_and_one_apply_identity_per_level_plus_the_runner" {

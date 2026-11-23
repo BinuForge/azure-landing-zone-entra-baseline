@@ -24,6 +24,7 @@ accepted, and what changes at bank scale. New records start from [the template](
 | [0017](0017-conditional-access-baseline.md) | Conditional Access baseline starts report-only and excludes one protected group | Identity | Accepted | 2026-11-19 |
 | [0018](0018-entra-tenant-governance-defaults.md) | Tenant defaults deny by default, and passkeys replace phone methods | Identity | Accepted | 2026-11-19 |
 | [0019](0019-pim-applied-by-a-person-checked-by-terraform.md) | PIM is applied by a person with a delegated token and checked by Terraform | Identity | Accepted | 2026-11-22 |
+| [0020](0020-copies-use-one-suffix-for-globally-unique-names.md) | Copies of the lab add one suffix to the names that must be unique across Azure | Delivery | Accepted | 2026-11-23 |
 
 ADR-0004 is under review: the free account's credit ends on 2026-11-24, and the choice is to let the
 subscription lapse or move to pay-as-you-go. The outcome will be a new record that supersedes it.

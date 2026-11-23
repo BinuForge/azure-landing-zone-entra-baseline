@@ -9,6 +9,17 @@ variable "prefix" {
   }
 }
 
+variable "unique_suffix" {
+  description = "Up to 3 lowercase letters or digits added to the names that must be unique across Azure (docs/naming.md). Empty for the original lab; set one when you deploy your own copy (QUICKSTART.md)."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = can(regex("^[a-z0-9]{0,3}$", var.unique_suffix))
+    error_message = "unique_suffix must be 0 to 3 lowercase letters or digits."
+  }
+}
+
 variable "spoke_address_space" {
   description = "AI services spoke range (docs/architecture/address-plan.md)."
   type        = string

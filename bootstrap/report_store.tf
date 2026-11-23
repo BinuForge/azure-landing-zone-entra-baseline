@@ -2,7 +2,7 @@
 # outlive every teardown. Only Entra identities with a data role get in: shared keys, and with them
 # account and service SAS, are off, and nothing is anonymous.
 locals {
-  report_store_name = "${var.prefix}streportsprd${local.region}01"
+  report_store_name = "${var.prefix}streportsprd${local.region}01${var.unique_suffix}"
 }
 
 resource "azurerm_storage_account" "reports" {

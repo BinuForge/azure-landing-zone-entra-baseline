@@ -105,9 +105,20 @@ class Validation(unittest.TestCase):
 class Settings(unittest.TestCase):
     def test_bad_settings_are_refused(self):
         base = {"AZURE_TENANT_ID": TENANT, "AZURE_SUBSCRIPTION_ID": SUBSCRIPTION}
-        for bad in ({"OPSAGENT_DAYS": "0"}, {"OPSAGENT_DAYS": "x"}, {"AZURE_TENANT_ID": "t"}, {"OPSAGENT_PREFIX": "LAB!"}, {"GITHUB_RUN_ID": "1;x"}):
+        for bad in ({"OPSAGENT_DAYS": "0"}, {"OPSAGENT_DAYS": "x"}, {"AZURE_TENANT_ID": "t"}, {"OPSAGENT_PREFIX": "LAB!"}, {"LAB_UNIQUE_SUFFIX": "toolong"}, {"LAB_UNIQUE_SUFFIX": "a.b"}, {"GITHUB_RUN_ID": "1;x"}):
             with self.subTest(bad=bad), self.assertRaises(ConfigError):
                 Config.from_env({**base, **bad})
+
+    def test_the_suffix_reaches_only_the_globally_unique_names(self):
+        base = {"AZURE_TENANT_ID": TENANT, "AZURE_SUBSCRIPTION_ID": SUBSCRIPTION}
+        original = Config.from_env(base)
+        self.assertEqual(original.gateway, "https://lab-apim-aiservices-prd-ae.azure-api.net/openai")
+        self.assertEqual(original.report_container, "https://labstreportsprdae01.blob.core.windows.net/reports")
+        copy = Config.from_env({**base, "LAB_UNIQUE_SUFFIX": "x7k"})
+        self.assertEqual(copy.gateway, "https://lab-apim-aiservices-prd-ae-x7k.azure-api.net/openai")
+        self.assertEqual(copy.report_container, "https://labstreportsprdae01x7k.blob.core.windows.net/reports")
+        self.assertEqual(copy.resource_groups, original.resource_groups)
+        self.assertEqual(copy.gateway_audience, original.gateway_audience)
 
     def test_the_ai_services_group_is_not_readable(self):
         cfg = Config.from_env({"AZURE_TENANT_ID": TENANT, "AZURE_SUBSCRIPTION_ID": SUBSCRIPTION})

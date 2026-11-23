@@ -60,7 +60,7 @@ resource "azurerm_public_ip" "apim" {
   location            = local.location
   sku                 = "Standard"
   allocation_method   = "Static"
-  domain_name_label   = "${var.prefix}-apim-aiservices-prd-ae"
+  domain_name_label   = local.apim_name
   tags                = local.tags
 }
 
@@ -74,7 +74,7 @@ moved {
 }
 
 locals {
-  apim_name = "${var.prefix}-apim-aiservices-prd-ae"
+  apim_name = "${var.prefix}-apim-aiservices-prd-ae${local.global_suffix}"
 
   # TLS 1.2 or later only, at the gateway and to backends; no 3DES, and only forward-secret ECDHE suites
   # stay on. Written out, not left to defaults, so the service keeps them whatever its creation date.

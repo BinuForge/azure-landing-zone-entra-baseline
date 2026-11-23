@@ -23,9 +23,10 @@ Callers need an Entra token for the gateway with the `AI.Invoke` role. Only `lab
 holds it (bootstrap/gateway.tf). From a job signed in as that identity:
 
 ```sh
-# The runner cannot read Terraform outputs, so it builds the same values level 3 does.
+# The runner cannot read Terraform outputs, so it builds the same values level 3 does. A copy of the
+# lab adds its suffix to the hostname, for example lab-apim-aiservices-prd-ae-k7q (docs/naming.md).
 AUDIENCE="api://$AZURE_TENANT_ID/lab-aigateway"
-GATEWAY="https://lab-apim-aiservices-prd-ae.azure-api.net/openai"
+GATEWAY="https://lab-apim-aiservices-prd-ae${LAB_UNIQUE_SUFFIX:+-$LAB_UNIQUE_SUFFIX}.azure-api.net/openai"
 TOKEN="$(az account get-access-token --resource "$AUDIENCE" --query accessToken -o tsv)"
 
 curl -s "$GATEWAY/deployments/gpt-5-mini/chat/completions?api-version=2024-10-21" \
