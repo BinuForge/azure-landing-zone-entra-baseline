@@ -1,7 +1,7 @@
 # Contributing
 
 The repository has one maintainer (ADR-0006), but every change follows the same path, and so would a
-contribution.
+contribution. New here? Read [how it works](docs/how-it-works.md) first.
 
 ## How a change is made
 

@@ -12,6 +12,8 @@ gates as a deploy: a saved destroy plan, read before approval, applied by the le
 
 Empty level resource groups stay too. They are free, and level identities are scoped to them.
 
+When the subscription itself is ending, see [rebuild in a new tenant](rebuild-in-new-tenant.md).
+
 ## Run it
 
 1. GitHub, Actions, `destroy`, Run workflow.
