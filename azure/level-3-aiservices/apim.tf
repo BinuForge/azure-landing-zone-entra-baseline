@@ -137,7 +137,14 @@ resource "azapi_resource" "apim" {
     delete = "1h"
   }
 
-  depends_on = [azurerm_network_security_rule.apim, azapi_resource_action.apim_purge]
+  # The subnet's NSG must stay attached until APIM and its children are gone. Its Standard public IP
+  # blocks all inbound traffic without an NSG, so Azure could no longer reach the management endpoint on
+  # 3443 and every child delete failed (destroy run 45276137887, docs/lessons-learned.md).
+  depends_on = [
+    azurerm_network_security_rule.apim,
+    azurerm_subnet_network_security_group_association.this,
+    azapi_resource_action.apim_purge,
+  ]
 }
 
 # A deleted APIM is kept for 48 hours with its name reserved, which blocks the next deploy. azurerm purged
