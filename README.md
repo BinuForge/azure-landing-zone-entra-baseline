@@ -12,8 +12,14 @@ pipelines with no stored secrets, deployed to a lab tenant and tested live, with
 New here? Read [the story](docs/architecture/story.md): the whole design in plain language, for anyone in
 IT.
 
-Want to run it yourself? The [quickstart](QUICKSTART.md) deploys your own copy into a new trial tenant and
-subscription, about AUD 3 a day on the free credit, and tears it down when you are done.
+## For engineers
+
+| Start with | It tells you |
+|---|---|
+| [How it works](docs/how-it-works.md) | One page: what is where, who runs it, how a change reaches Azure |
+| [Quickstart](QUICKSTART.md) | Deploy your own copy in a new trial tenant, about AUD 3 a day on the free credit, then tear it down |
+| [Runbooks](docs/runbooks/README.md) | Step by step, for each job |
+| [Glossary](docs/glossary.md) | The words this repository uses |
 
 ## Architecture
 
@@ -88,7 +94,7 @@ changed when.
 | [Control mapping](docs/security/control-mapping.md) | Which control supports which framework area, with code and tests |
 | [AI threat model](docs/security/threat-model-ai.md) and [identity threat model](docs/security/threat-model-identity.md) | How it could be attacked, and what stops it |
 | [Quickstart](QUICKSTART.md) | How to deploy your own copy for learning and testing, and tear it down |
-| [Runbooks](docs/runbooks/) | How to bootstrap, deploy, recover and tear down |
+| [Runbooks](docs/runbooks/README.md) | How to bootstrap, deploy, recover and tear down |
 | [Cost](docs/cost.md) | What it costs, and the HCP resource count |
 | [Naming](docs/naming.md) and [dependency graph](docs/architecture/dependency-graph.md) | Conventions and how levels connect |
 | [Contributing](CONTRIBUTING.md) and [security policy](SECURITY.md) | How changes are made, and how to report a problem |
