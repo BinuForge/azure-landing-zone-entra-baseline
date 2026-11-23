@@ -1,0 +1,60 @@
+[
+  {
+    "definition": "/providers/Microsoft.Management/managementGroups/lab-mg-root/providers/Microsoft.Authorization/policySetDefinitions/lab-ini-ai-account-v1",
+    "enforcement": "Default",
+    "name": "lab-ai-account",
+    "parameters": null,
+    "scope": "/providers/Microsoft.Management/managementGroups/lab-mg-landingzones"
+  },
+  {
+    "definition": "/providers/Microsoft.Management/managementGroups/lab-mg-root/providers/Microsoft.Authorization/policySetDefinitions/lab-ini-ai-deployments-v1",
+    "enforcement": "Default",
+    "name": "lab-ai-deployments",
+    "parameters": {
+      "approvedModelAssetIds": {
+        "value": [
+          "azureml://registries/azure-openai/models/gpt-4.1-mini/",
+          "azureml://registries/azure-openai/models/gpt-5-mini/"
+        ]
+      }
+    },
+    "scope": "/providers/Microsoft.Management/managementGroups/lab-mg-landingzones"
+  },
+  {
+    "definition": "/providers/Microsoft.Management/managementGroups/lab-mg-root/providers/Microsoft.Authorization/policySetDefinitions/lab-ini-baseline-v1",
+    "enforcement": "Default",
+    "name": "lab-baseline",
+    "parameters": {
+      "allowedLocations": {
+        "value": [
+          "australiaeast",
+          "australiasoutheast"
+        ]
+      }
+    },
+    "scope": "/providers/Microsoft.Management/managementGroups/lab-mg-root"
+  },
+  {
+    "definition": "/providers/Microsoft.Authorization/policyDefinitions/<guid-2>",
+    "enforcement": "Default",
+    "name": "lab-corp-no-pip",
+    "parameters": {
+      "effect": {
+        "value": "Deny"
+      },
+      "listOfResourceTypesNotAllowed": {
+        "value": [
+          "Microsoft.Network/publicIPAddresses"
+        ]
+      }
+    },
+    "scope": "/providers/Microsoft.Management/managementGroups/lab-mg-corp"
+  },
+  {
+    "definition": "/providers/Microsoft.Authorization/policySetDefinitions/<guid-3>",
+    "enforcement": "DoNotEnforce",
+    "name": "lab-mcsb",
+    "parameters": null,
+    "scope": "/providers/Microsoft.Management/managementGroups/lab-mg-root"
+  }
+]

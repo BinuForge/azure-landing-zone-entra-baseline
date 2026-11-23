@@ -1,0 +1,49 @@
+{
+  "columns": [
+    "Cost",
+    "ServiceName",
+    "Currency"
+  ],
+  "rows": [
+    [
+      16.7387195338592,
+      "API Management",
+      "AUD"
+    ],
+    [
+      0.524260312650346,
+      "Azure DNS",
+      "AUD"
+    ],
+    [
+      0.49735862694445,
+      "Azure Monitor",
+      "AUD"
+    ],
+    [
+      0.0,
+      "Bandwidth",
+      "AUD"
+    ],
+    [
+      0.0858203652383998,
+      "Foundry Models",
+      "AUD"
+    ],
+    [
+      0.0,
+      "Log Analytics",
+      "AUD"
+    ],
+    [
+      0.000252733603353938,
+      "Storage",
+      "AUD"
+    ],
+    [
+      3.87625239820934,
+      "Virtual Network",
+      "AUD"
+    ]
+  ]
+}

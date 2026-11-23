@@ -1,0 +1,10 @@
+[
+  {
+    "events": 4,
+    "latest_utc": "2026-11-23T00:29:05Z",
+    "level": "low",
+    "state": "dismissed",
+    "timing": "realtime",
+    "type": "suspiciousAuthAppApproval"
+  }
+]

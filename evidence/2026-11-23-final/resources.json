@@ -1,0 +1,158 @@
+[
+  {
+    "location": "australiaeast",
+    "name": "lab-apim-aiservices-prd-ae",
+    "resourceGroup": "lab-rg-aiservices-prd-ae",
+    "type": "microsoft.apimanagement/service"
+  },
+  {
+    "location": "australiaeast",
+    "name": "lab-ais-aiservices-prd-ae",
+    "resourceGroup": "lab-rg-aiservices-prd-ae",
+    "type": "microsoft.cognitiveservices/accounts"
+  },
+  {
+    "location": "australiaeast",
+    "name": "lab-ais-aiservices-prd-ae/opsagent",
+    "resourceGroup": "lab-rg-aiservices-prd-ae",
+    "type": "microsoft.cognitiveservices/accounts/projects"
+  },
+  {
+    "location": "australiaeast",
+    "name": "lab-alert-prompts-queried-prd-ae",
+    "resourceGroup": "lab-rg-aiservices-prd-ae",
+    "type": "microsoft.insights/scheduledqueryrules"
+  },
+  {
+    "location": "australiaeast",
+    "name": "lab-pe-aiservices-prd-ae.nic.<guid-1>",
+    "resourceGroup": "lab-rg-aiservices-prd-ae",
+    "type": "microsoft.network/networkinterfaces"
+  },
+  {
+    "location": "australiaeast",
+    "name": "lab-nsg-privateendpoints-prd-ae",
+    "resourceGroup": "lab-rg-aiservices-prd-ae",
+    "type": "microsoft.network/networksecuritygroups"
+  },
+  {
+    "location": "australiaeast",
+    "name": "lab-nsg-apim-prd-ae",
+    "resourceGroup": "lab-rg-aiservices-prd-ae",
+    "type": "microsoft.network/networksecuritygroups"
+  },
+  {
+    "location": "australiaeast",
+    "name": "lab-nsg-canary-np-ae",
+    "resourceGroup": "lab-rg-opsagent-np-ae",
+    "type": "microsoft.network/networksecuritygroups"
+  },
+  {
+    "location": "australiaeast",
+    "name": "NetworkWatcher_australiaeast",
+    "resourceGroup": "networkwatcherrg",
+    "type": "microsoft.network/networkwatchers"
+  },
+  {
+    "location": "global",
+    "name": "privatelink.cognitiveservices.azure.com",
+    "resourceGroup": "lab-rg-dns-prd-ae",
+    "type": "microsoft.network/privatednszones"
+  },
+  {
+    "location": "global",
+    "name": "privatelink.services.ai.azure.com",
+    "resourceGroup": "lab-rg-dns-prd-ae",
+    "type": "microsoft.network/privatednszones"
+  },
+  {
+    "location": "global",
+    "name": "privatelink.openai.azure.com",
+    "resourceGroup": "lab-rg-dns-prd-ae",
+    "type": "microsoft.network/privatednszones"
+  },
+  {
+    "location": "global",
+    "name": "lab-link-aiservices-aiservices",
+    "resourceGroup": "lab-rg-dns-prd-ae",
+    "type": "microsoft.network/privatednszones/virtualnetworklinks"
+  },
+  {
+    "location": "global",
+    "name": "lab-link-hub-aiservices",
+    "resourceGroup": "lab-rg-dns-prd-ae",
+    "type": "microsoft.network/privatednszones/virtualnetworklinks"
+  },
+  {
+    "location": "global",
+    "name": "lab-link-aiservices-cognitiveservices",
+    "resourceGroup": "lab-rg-dns-prd-ae",
+    "type": "microsoft.network/privatednszones/virtualnetworklinks"
+  },
+  {
+    "location": "global",
+    "name": "lab-link-hub-cognitiveservices",
+    "resourceGroup": "lab-rg-dns-prd-ae",
+    "type": "microsoft.network/privatednszones/virtualnetworklinks"
+  },
+  {
+    "location": "global",
+    "name": "lab-link-aiservices-openai",
+    "resourceGroup": "lab-rg-dns-prd-ae",
+    "type": "microsoft.network/privatednszones/virtualnetworklinks"
+  },
+  {
+    "location": "global",
+    "name": "lab-link-hub-openai",
+    "resourceGroup": "lab-rg-dns-prd-ae",
+    "type": "microsoft.network/privatednszones/virtualnetworklinks"
+  },
+  {
+    "location": "australiaeast",
+    "name": "lab-pe-aiservices-prd-ae",
+    "resourceGroup": "lab-rg-aiservices-prd-ae",
+    "type": "microsoft.network/privateendpoints"
+  },
+  {
+    "location": "australiaeast",
+    "name": "lab-pip-apim-prd-ae",
+    "resourceGroup": "lab-rg-aiservices-prd-ae",
+    "type": "microsoft.network/publicipaddresses"
+  },
+  {
+    "location": "australiaeast",
+    "name": "lab-vnet-aiservices-prd-ae",
+    "resourceGroup": "lab-rg-aiservices-prd-ae",
+    "type": "microsoft.network/virtualnetworks"
+  },
+  {
+    "location": "australiaeast",
+    "name": "lab-vnet-hub-prd-ae",
+    "resourceGroup": "lab-rg-connectivity-prd-ae",
+    "type": "microsoft.network/virtualnetworks"
+  },
+  {
+    "location": "australiaeast",
+    "name": "lab-log-security-prd-ae",
+    "resourceGroup": "lab-rg-bootstrap-prd-ae",
+    "type": "microsoft.operationalinsights/workspaces"
+  },
+  {
+    "location": "australiaeast",
+    "name": "lab-log-management-prd-ae",
+    "resourceGroup": "lab-rg-management-prd-ae",
+    "type": "microsoft.operationalinsights/workspaces"
+  },
+  {
+    "location": "australiaeast",
+    "name": "lab-log-prompts-prd-ae",
+    "resourceGroup": "lab-rg-aiservices-prd-ae",
+    "type": "microsoft.operationalinsights/workspaces"
+  },
+  {
+    "location": "australiaeast",
+    "name": "labstreportsprdae01",
+    "resourceGroup": "lab-rg-bootstrap-prd-ae",
+    "type": "microsoft.storage/storageaccounts"
+  }
+]

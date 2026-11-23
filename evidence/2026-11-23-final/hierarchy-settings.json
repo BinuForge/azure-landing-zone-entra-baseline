@@ -1,0 +1,4 @@
+{
+  "defaultManagementGroup": "lab-mg-sandbox",
+  "requireAuthorizationForGroupCreation": true
+}
