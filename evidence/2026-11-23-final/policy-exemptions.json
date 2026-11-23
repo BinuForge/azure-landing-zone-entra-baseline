@@ -1,0 +1,20 @@
+[
+  {
+    "assignment": "/providers/Microsoft.Management/managementGroups/lab-mg-landingzones/providers/Microsoft.Authorization/policyAssignments/lab-ai-deployments",
+    "category": "Waiver",
+    "expiresOn": "2026-12-15T00:00:00+00:00",
+    "name": "lab-study-ai-deployments"
+  },
+  {
+    "assignment": "/providers/Microsoft.Management/managementGroups/lab-mg-landingzones/providers/Microsoft.Authorization/policyAssignments/lab-ai-account",
+    "category": "Waiver",
+    "expiresOn": "2026-12-15T00:00:00+00:00",
+    "name": "lab-study-ai-account"
+  },
+  {
+    "assignment": "/providers/Microsoft.Management/managementGroups/lab-mg-corp/providers/Microsoft.Authorization/policyAssignments/lab-corp-no-pip",
+    "category": "Waiver",
+    "expiresOn": "2026-12-15T00:00:00+00:00",
+    "name": "lab-study-no-pip"
+  }
+]

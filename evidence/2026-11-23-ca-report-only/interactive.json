@@ -1,0 +1,79 @@
+[
+  {
+    "from_utc": "2026-11-22T01:06:57.5154865Z",
+    "outcome": "reportOnlyNotApplied",
+    "policy": "CA001-Global-BlockLegacyAuth",
+    "sign_ins": 28,
+    "to_utc": "2026-11-23T01:06:31.8868924Z"
+  },
+  {
+    "from_utc": "2026-11-22T01:06:57.5154865Z",
+    "outcome": "reportOnlyNotApplied",
+    "policy": "CA002-Global-BlockDeviceCodeFlow",
+    "sign_ins": 28,
+    "to_utc": "2026-11-23T01:06:31.8868924Z"
+  },
+  {
+    "from_utc": "2026-11-22T01:06:57.5154865Z",
+    "outcome": "reportOnlyNotApplied",
+    "policy": "CA003-Global-BlockUntrustedCountries",
+    "sign_ins": 28,
+    "to_utc": "2026-11-23T01:06:31.8868924Z"
+  },
+  {
+    "from_utc": "2026-11-22T01:06:57.5154865Z",
+    "outcome": "reportOnlyInterrupted",
+    "policy": "CA004-Admins-RequirePhishingResistantMfa",
+    "sign_ins": 28,
+    "to_utc": "2026-11-23T01:06:31.8868924Z"
+  },
+  {
+    "from_utc": "2026-11-22T22:45:07.0695874Z",
+    "outcome": "reportOnlyInterrupted",
+    "policy": "CA005-Internals-RequireMfa",
+    "sign_ins": 8,
+    "to_utc": "2026-11-23T00:53:17.6349973Z"
+  },
+  {
+    "from_utc": "2026-11-22T01:06:57.5154865Z",
+    "outcome": "reportOnlySuccess",
+    "policy": "CA005-Internals-RequireMfa",
+    "sign_ins": 20,
+    "to_utc": "2026-11-23T01:06:31.8868924Z"
+  },
+  {
+    "from_utc": "2026-11-22T22:45:07.0695874Z",
+    "outcome": "reportOnlyInterrupted",
+    "policy": "CA006-Guests-RequireMfa",
+    "sign_ins": 6,
+    "to_utc": "2026-11-22T22:54:56.9973851Z"
+  },
+  {
+    "from_utc": "2026-11-22T01:35:36.2590723Z",
+    "outcome": "reportOnlyNotApplied",
+    "policy": "CA006-Guests-RequireMfa",
+    "sign_ins": 20,
+    "to_utc": "2026-11-23T01:06:31.8868924Z"
+  },
+  {
+    "from_utc": "2026-11-22T01:06:57.5154865Z",
+    "outcome": "reportOnlySuccess",
+    "policy": "CA006-Guests-RequireMfa",
+    "sign_ins": 2,
+    "to_utc": "2026-11-22T22:47:07.9835108Z"
+  },
+  {
+    "from_utc": "2026-11-22T01:06:57.5154865Z",
+    "outcome": "reportOnlyNotApplied",
+    "policy": "CA007-Global-RiskySignInRequireMfa",
+    "sign_ins": 28,
+    "to_utc": "2026-11-23T01:06:31.8868924Z"
+  },
+  {
+    "from_utc": "2026-11-22T01:06:57.5154865Z",
+    "outcome": "reportOnlyNotApplied",
+    "policy": "CA008-Global-HighUserRiskRequirePasswordChange",
+    "sign_ins": 28,
+    "to_utc": "2026-11-23T01:06:31.8868924Z"
+  }
+]
