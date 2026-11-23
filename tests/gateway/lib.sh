@@ -2,9 +2,14 @@
 # Terraform outputs.
 # shellcheck shell=bash
 PREFIX="${PREFIX:-lab}"
+SUFFIX="${LAB_UNIQUE_SUFFIX:-}"
+GLOBAL_SUFFIX="${SUFFIX:+-$SUFFIX}"
+APIM_NAME="$PREFIX-apim-aiservices-prd-ae$GLOBAL_SUFFIX"
+FOUNDRY_NAME="$PREFIX-ais-aiservices-prd-ae$GLOBAL_SUFFIX"
+REPORTS_ACCOUNT="${PREFIX}streportsprdae01$SUFFIX"
 TENANT="${AZURE_TENANT_ID:?set AZURE_TENANT_ID}"
-GATEWAY="https://$PREFIX-apim-aiservices-prd-ae.azure-api.net/openai"
-FOUNDRY="https://$PREFIX-ais-aiservices-prd-ae.openai.azure.com/openai"
+GATEWAY="https://$APIM_NAME.azure-api.net/openai"
+FOUNDRY="https://$FOUNDRY_NAME.openai.azure.com/openai"
 AUDIENCE="api://$TENANT/$PREFIX-aigateway"
 API="api-version=2024-10-21"
 DEPLOYMENT="gpt-5-mini"

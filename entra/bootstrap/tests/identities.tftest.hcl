@@ -25,6 +25,8 @@ mock_provider "github" {
 variables {
   github_oidc_subject_prefix = "repo:example@1/repo@2"
   hcp_organization           = "example-org"
+  github_owner               = "example"
+  github_apply_reviewer      = "example"
 }
 
 run "one_identity_pair_per_entra_workspace_and_no_apply_for_tier_0" {

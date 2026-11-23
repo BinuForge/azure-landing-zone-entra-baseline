@@ -11,7 +11,7 @@
 # Written for bash 3.2, which macOS ships, so no associative arrays or mapfile.
 set -euo pipefail
 
-REPO="${REPO:-BinuForge/azure-landing-zone-entra-baseline}"
+REPO="${REPO:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}"
 PREFIX="${PREFIX:-lab}"
 
 # Terraform environments only. The ops agent runner never runs Terraform, so it gets neither secret.

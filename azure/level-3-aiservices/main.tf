@@ -27,4 +27,9 @@ locals {
   tags = {
     managed-by = "${var.prefix}-azure-l3-aiservices-prd"
   }
+
+  # Only names that must be unique across Azure take the suffix: the Foundry subdomain and the APIM
+  # hostname (docs/naming.md). Empty for the original lab, so its names do not change.
+  global_suffix = var.unique_suffix == "" ? "" : "-${var.unique_suffix}"
+  foundry_name  = "${var.prefix}-ais-aiservices-prd-ae${local.global_suffix}"
 }

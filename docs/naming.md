@@ -66,6 +66,22 @@ Pattern: `<prefix>-<type>-<component>-<env>-<region>[-<nn>]`, where `<type>` is 
 | Policy definition / initiative | `pol` / `ini` | `lab-ini-baseline-v1` | Version suffix is part of the name (see the policy baseline). |
 | Custom role | n/a | `lab-role-landingzone-owner` | |
 
+### Names unique across Azure
+
+Three names must be unique across all of Azure, not just inside the subscription: the report store
+(storage account), the Foundry subdomain and the API Management hostname with its public IP label. A copy
+of the lab sets `unique_suffix` (1 to 3 lowercase letters or digits) so its names do not clash with the
+original, or with a deleted service that still holds a name (ADR-0020, [QUICKSTART](../QUICKSTART.md)).
+
+| Resource | Original lab | Copy with suffix `k7q` |
+|---|---|---|
+| Report store | `labstreportsprdae01` | `labstreportsprdae01k7q` |
+| Foundry account and subdomain | `lab-ais-aiservices-prd-ae` | `lab-ais-aiservices-prd-ae-k7q` |
+| API Management and its public IP label | `lab-apim-aiservices-prd-ae` | `lab-apim-aiservices-prd-ae-k7q` |
+
+Nothing else takes the suffix. Resource groups, GitHub environments, HCP workspaces and Entra objects are
+unique only inside your own subscription, repository, organisation and tenant.
+
 ## Entra ID
 
 | Object | Pattern | Example |

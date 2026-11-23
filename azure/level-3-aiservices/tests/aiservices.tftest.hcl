@@ -379,3 +379,40 @@ run "deleted_gateway_is_purged_on_destroy_only" {
     error_message = "The purge must run at destroy time only, so a teardown leaves no reserved name."
   }
 }
+
+run "unique_suffix_reaches_the_globally_unique_names_only" {
+  command = plan
+
+  variables {
+    enable_apim   = true
+    unique_suffix = "x7k"
+  }
+
+  assert {
+    condition     = azurerm_cognitive_account.this.custom_subdomain_name == "lab-ais-aiservices-prd-ae-x7k"
+    error_message = "The Foundry subdomain must end with the unique suffix (docs/naming.md)."
+  }
+
+  assert {
+    condition     = azapi_resource.apim[0].name == "lab-apim-aiservices-prd-ae-x7k" && azurerm_public_ip.apim[0].domain_name_label == "lab-apim-aiservices-prd-ae-x7k"
+    error_message = "The APIM hostname and its public IP label must end with the unique suffix."
+  }
+
+  assert {
+    condition     = azurerm_private_endpoint.foundry.name == "lab-pe-aiservices-prd-ae"
+    error_message = "Names that are unique only inside the subscription must not take the suffix."
+  }
+}
+
+run "original_lab_names_are_unchanged" {
+  command = plan
+
+  variables {
+    enable_apim = true
+  }
+
+  assert {
+    condition     = azurerm_cognitive_account.this.custom_subdomain_name == "lab-ais-aiservices-prd-ae" && azapi_resource.apim[0].name == "lab-apim-aiservices-prd-ae"
+    error_message = "With no suffix, the original lab keeps its names, so it plans no change."
+  }
+}

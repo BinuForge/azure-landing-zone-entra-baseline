@@ -15,6 +15,10 @@ on:
 
 permissions: {}
 
+# Added to the names that must be unique across Azure, as level 3 and bootstrap do (docs/naming.md).
+env:
+  LAB_UNIQUE_SUFFIX: ${{ vars.LAB_UNIQUE_SUFFIX }}
+
 # Never alongside the gateway tests or the ops agent: all three share the caller's token limit.
 concurrency:
   group: ai-gateway

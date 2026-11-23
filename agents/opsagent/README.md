@@ -63,7 +63,8 @@ Turn the gateway on (`docs/runbooks/ai-gateway.md`), then run `opsagent` from th
 report, signed in as the maintainer:
 
 ```sh
-az storage blob list --account-name labstreportsprdae01 --container-name reports --auth-mode login -o table
-az storage blob download --account-name labstreportsprdae01 --container-name reports --auth-mode login \
+ACCOUNT="$(terraform -chdir=bootstrap output -json report_store | jq -r .account)" # labstreportsprdae01 in the original lab
+az storage blob list --account-name "$ACCOUNT" --container-name reports --auth-mode login -o table
+az storage blob download --account-name "$ACCOUNT" --container-name reports --auth-mode login \
   --name <name> --file report.md
 ```

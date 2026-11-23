@@ -103,6 +103,8 @@ variables {
   budget_contact_emails      = ["alerts@example.com"]
   github_oidc_subject_prefix = "repo:example@1/repo@2"
   hcp_organization           = "example-org"
+  github_owner               = "example"
+  github_apply_reviewer      = "example"
 }
 
 run "no_identity_is_owner_or_user_access_administrator" {

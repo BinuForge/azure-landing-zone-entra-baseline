@@ -11,7 +11,7 @@ source "$(dirname "$0")/lib.sh"
 
 OUT="${1:?results file}"
 RG="$PREFIX-rg-aiservices-prd-ae"
-NAME="$PREFIX-apim-aiservices-prd-ae"
+NAME="$APIM_NAME"
 
 probe() {
   http "$GATEWAY/deployments/$DEPLOYMENT/chat/completions?$API" -X POST -H "Content-Type: application/json" -d '{}'

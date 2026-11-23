@@ -3,12 +3,12 @@
 # so this is enforced twice.
 resource "azurerm_cognitive_account" "this" {
   # checkov:skip=CKV2_AZURE_22:Microsoft-managed keys by data classification: lab metadata only (ADR-0014).
-  name                          = "${var.prefix}-ais-aiservices-prd-ae"
+  name                          = local.foundry_name
   resource_group_name           = local.rg
   location                      = local.location
   kind                          = "AIServices"
   sku_name                      = "S0"
-  custom_subdomain_name         = "${var.prefix}-ais-aiservices-prd-ae"
+  custom_subdomain_name         = local.foundry_name
   project_management_enabled    = true
   public_network_access_enabled = false
   local_auth_enabled            = false

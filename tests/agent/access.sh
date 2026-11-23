@@ -38,7 +38,7 @@ code="$(http "https://management.azure.com/subscriptions/$SUB/providers/Microsof
   -d '{"name":"t-02","type":"Microsoft.Support/supportTickets"}')"
 record T-02c C-06 "The runner cannot use support requests" 403 "$code" "$(error_code)"
 
-code="$(http "https://${PREFIX}streportsprdae01.blob.core.windows.net/reports?restype=container&comp=list" \
+code="$(http "https://$REPORTS_ACCOUNT.blob.core.windows.net/reports?restype=container&comp=list" \
   -H "Authorization: Bearer $storage" -H "x-ms-version: 2023-11-03")"
 record T-02d C-12 "The runner can write reports but cannot read them" 403 "$code"
 
