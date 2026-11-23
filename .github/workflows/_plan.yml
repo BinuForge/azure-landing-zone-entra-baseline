@@ -87,6 +87,7 @@ jobs:
         id: plan
         env:
           ENVIRONMENT: ${{ inputs.environment }}
+          WORKING_DIRECTORY: ${{ inputs.working_directory }}
           DESTROY_FLAG: ${{ inputs.destroy && '-destroy' || '' }}
           CHANGES_FILTER: >-
             [(.resource_changes[]? | select(.change.actions != ["no-op"] and .change.actions != ["read"])),
@@ -104,7 +105,9 @@ jobs:
             changes=$(terraform show -json tfplan | jq "$CHANGES_FILTER")
           fi
           echo "has_changes=$([ "$changes" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "artifact=tfplan-${ENVIRONMENT}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          # Named by root as well as environment: the three level 2 roots share one environment, so a name
+          # by environment alone let one root's apply download another root's plan (destroy run 45286016794).
+          echo "artifact=tfplan-${ENVIRONMENT}-${WORKING_DIRECTORY//\//-}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
 
       # Only actions and addresses leave the runner. The JSON plan holds values in clear text.
       - name: Summarise

@@ -193,6 +193,9 @@ resource "azurerm_role_definition" "soft_delete_purger" {
     actions = [
       "Microsoft.ApiManagement/locations/deletedservices/read",
       "Microsoft.ApiManagement/locations/deletedservices/delete",
+      # The purge is asynchronous; without this the caller cannot read its result, and the destroy fails
+      # after the purge has already succeeded (destroy run 45284323528).
+      "Microsoft.ApiManagement/locations/deletedservices/operationResults/read",
       "Microsoft.CognitiveServices/locations/resourceGroups/deletedAccounts/read",
       "Microsoft.CognitiveServices/locations/resourceGroups/deletedAccounts/delete",
     ]
