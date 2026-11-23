@@ -1,0 +1,17 @@
+{
+  "label": "2026-11-24-teardown",
+  "collected_at": "2026-11-23T23:51:13Z",
+  "workflow_run": "45292204774",
+  "commit": "15c8d27567bae2f6b461fe8ff57bd1d9e8938a63",
+  "files": [
+    "management-groups.json",
+    "hierarchy-settings.json",
+    "role-assignments.json",
+    "resources.json",
+    "cost-month-to-date.json",
+    "policy-assignments.json",
+    "policy-exemptions.json",
+    "policy-tests.json",
+    "leftovers.json"
+  ]
+}
