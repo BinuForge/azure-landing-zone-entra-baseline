@@ -1,0 +1,17 @@
+{
+  "label": "2026-11-23-final",
+  "collected_at": "2026-11-23T01:09:10Z",
+  "workflow_run": "45092831898",
+  "commit": "b5989d9f2d119dbe2a648518c38465edeb52ebcc",
+  "files": [
+    "management-groups.json",
+    "hierarchy-settings.json",
+    "role-assignments.json",
+    "resources.json",
+    "cost-month-to-date.json",
+    "policy-assignments.json",
+    "policy-exemptions.json",
+    "policy-tests.json",
+    "leftovers.json"
+  ]
+}

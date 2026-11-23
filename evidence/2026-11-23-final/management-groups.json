@@ -1,0 +1,70 @@
+{
+  "name": "lab-mg-root",
+  "displayName": "Lab",
+  "type": "managementGroups",
+  "children": [
+    {
+      "name": "lab-mg-sandbox",
+      "displayName": "Sandbox",
+      "type": "managementGroups",
+      "children": []
+    },
+    {
+      "name": "lab-mg-platform",
+      "displayName": "Platform",
+      "type": "managementGroups",
+      "children": [
+        {
+          "name": "lab-mg-connectivity",
+          "displayName": "Connectivity",
+          "type": "managementGroups",
+          "children": []
+        },
+        {
+          "name": "lab-mg-management",
+          "displayName": "Management",
+          "type": "managementGroups",
+          "children": []
+        },
+        {
+          "name": "lab-mg-identity",
+          "displayName": "Identity",
+          "type": "managementGroups",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "lab-mg-decommissioned",
+      "displayName": "Decommissioned",
+      "type": "managementGroups",
+      "children": []
+    },
+    {
+      "name": "lab-mg-landingzones",
+      "displayName": "Landing zones",
+      "type": "managementGroups",
+      "children": [
+        {
+          "name": "lab-mg-online",
+          "displayName": "Online",
+          "type": "managementGroups",
+          "children": []
+        },
+        {
+          "name": "lab-mg-corp",
+          "displayName": "Corp",
+          "type": "managementGroups",
+          "children": [
+            {
+              "name": "<subscription>",
+              "displayName": "lab-sub-shared-prd",
+              "type": "subscriptions",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
