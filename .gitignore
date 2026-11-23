@@ -17,11 +17,8 @@ override.tf.json
 !**/env/example.auto.tfvars
 *.tfvars.json
 
-# Personal assistant files and notes stay local.
+# Personal notes stay local. Editor and tool files belong in your global git ignore.
 # Shared rules for assistants are committed in .github/copilot-instructions.md.
-CLAUDE.md
-CLAUDE.local.md
-.claude/
 notes/
 *.notes.md
 
