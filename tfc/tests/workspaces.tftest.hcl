@@ -140,3 +140,10 @@ run "level_4_gets_separate_plan_and_apply_identities" {
     error_message = "Credential variable sets may attach only to level 4 workspaces."
   }
 }
+
+run "workspaces_are_safe_deleted_by_default" {
+  assert {
+    condition     = alltrue([for ws in tfe_workspace.this : ws.force_delete == false])
+    error_message = "Workspaces must be safe-deleted unless a final teardown sets allow_force_delete."
+  }
+}

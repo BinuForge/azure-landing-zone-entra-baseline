@@ -52,6 +52,10 @@ resource "tfe_workspace" "this" {
   # Only remote runs use this; local runs use the version pinned in CI.
   terraform_version = each.value.execution_mode == "remote" ? var.terraform_version : null
 
+  # Off by default, so a workspace that still holds state is never deleted by accident. A final teardown
+  # sets it, applies, then destroys (docs/runbooks/rebuild-in-new-tenant.md).
+  force_delete = var.allow_force_delete
+
   tags = {
     area  = each.value.area
     level = each.value.level
