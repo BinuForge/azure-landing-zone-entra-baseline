@@ -15,7 +15,7 @@ Notable changes, newest first. Each entry links the pull requests. The format fo
 - Docs for engineers: [how it works](docs/how-it-works.md) on one page, a [glossary](docs/glossary.md)
   and a [runbook index](docs/runbooks/README.md), linked from the top of the README.
 - [Rebuild in a new tenant](docs/runbooks/rebuild-in-new-tenant.md): move this repository to a new tenant
-  and subscription with a new HCP organisation, keeping the old one as a record. ADR-0004 stands.
+  and subscription, deleting the old HCP workspaces through code so nothing stale is left. ADR-0004 stands.
 
 ## 2026-11-22: Entra baseline, part 2, and assurance
 

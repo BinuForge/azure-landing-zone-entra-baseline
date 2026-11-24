@@ -31,3 +31,9 @@ variable "variable_set_inputs" {
   type        = map(string)
   default     = {}
 }
+
+variable "allow_force_delete" {
+  description = "Let terraform destroy delete workspaces that still hold state. Set only for the final teardown of a lab, never while its resources are in use."
+  type        = bool
+  default     = false
+}

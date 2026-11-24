@@ -27,7 +27,7 @@ accepted, and what changes at bank scale. New records start from [the template](
 | [0020](0020-copies-use-one-suffix-for-globally-unique-names.md) | Copies of the lab add one suffix to the names that must be unique across Azure | Delivery | Accepted | 2026-11-23 |
 
 ADR-0004 stands: when a free account's credit ends, the subscription lapses and the lab is rebuilt in a
-new tenant with a new HCP organisation ([runbook](../runbooks/rebuild-in-new-tenant.md)). The first
+new tenant with fresh HCP workspaces ([runbook](../runbooks/rebuild-in-new-tenant.md)). The first
 subscription's credit ended on 2026-11-24.
 
 [`real-world/`](real-world/) holds decisions of the kind an architect makes at a regulated organisation, where
